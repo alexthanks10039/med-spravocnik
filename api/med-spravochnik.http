@@ -1,0 +1,46 @@
+@baseUrl = http://localhost:4000/api
+@token = paste-login-token-here
+
+### Health
+GET {{baseUrl}}/health
+
+### Login as seeded admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@med.local",
+  "password": "Admin123!"
+}
+
+### Current user
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Diseases
+GET {{baseUrl}}/diseases
+
+### Search diseases
+GET {{baseUrl}}/diseases?q=гипертензия
+
+### Drugs
+GET {{baseUrl}}/drugs
+
+### Search drugs
+GET {{baseUrl}}/drugs?q=амло
+
+### Articles
+GET {{baseUrl}}/articles
+
+### Create a test disease as admin
+POST {{baseUrl}}/diseases
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Тестовое заболевание",
+  "icd10": "Z00",
+  "symptoms": "Тестовые симптомы",
+  "diagnostics": "Тестовая диагностика",
+  "treatment": "Тестовое лечение"
+}

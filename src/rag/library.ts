@@ -1,7 +1,7 @@
 export type RagSpace='commercial'|'development'|'content';
 export type RagDocument={id:string;space:RagSpace;title:string;summary:string;tags:string[];source:string;updatedAt:string};
 export const commercialSpace:RagDocument[]=[
- {id:'commercial-positioning',space:'commercial',title:'Позиционирование MED TIM',summary:'Профессиональный справочник для быстрого доступа к лекарствам, заболеваниям, статьям и клиническим калькуляторам.',tags:['product','positioning','doctors'],source:'internal',updatedAt:'2026-06-12'},
+ {id:'commercial-positioning',space:'commercial',title:'Позиционирование MED SPRAVOCHNIK',summary:'Профессиональный справочник для быстрого доступа к лекарствам, заболеваниям, статьям и клиническим калькуляторам.',tags:['product','positioning','doctors'],source:'internal',updatedAt:'2026-06-12'},
  {id:'commercial-model',space:'commercial',title:'Коммерческая модель',summary:'Базовый справочник открыт, подписка расширяет контент, командные функции и администрирование.',tags:['pricing','subscription','b2b'],source:'internal',updatedAt:'2026-06-12'}
 ];
 export const developmentSpace:RagDocument[]=[
