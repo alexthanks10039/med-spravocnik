@@ -40,18 +40,24 @@ class AppShell extends StatelessWidget {
   ];
 
   int get _index {
-    if (path.startsWith('/search')) return 1;
+    if (path.startsWith('/search')) {
+      return 1;
+    }
     if (path.startsWith('/catalog') ||
         path.startsWith('/diseases') ||
         path.startsWith('/drugs') ||
         path.startsWith('/articles') ||
-        path.startsWith('/calculators'))
+        path.startsWith('/calculators')) {
       return 2;
+    }
     if (path.startsWith('/saved') ||
         path.startsWith('/notes') ||
-        path.startsWith('/history'))
+        path.startsWith('/history')) {
       return 3;
-    if (path.startsWith('/profile') || path.startsWith('/settings')) return 4;
+    }
+    if (path.startsWith('/profile') || path.startsWith('/settings')) {
+      return 4;
+    }
     return 0;
   }
 

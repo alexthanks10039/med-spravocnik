@@ -47,12 +47,13 @@ class SavedScreen extends ConsumerWidget {
               final saved = items
                   .where((item) => ids.contains(item.id))
                   .toList();
-              if (saved.isEmpty)
+              if (saved.isEmpty) {
                 return const StatePanel.empty(
                   title: 'Избранное пусто',
                   message:
                       'Сохраняйте материалы, чтобы они были доступны здесь и офлайн.',
                 );
+              }
               return Column(
                 children: saved
                     .map(
@@ -280,25 +281,29 @@ class SettingsScreen extends ConsumerWidget {
           Text('Внешний вид', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 10),
           Card(
-            child: Column(
-              children: ThemeMode.values
-                  .map(
-                    (item) => RadioListTile<ThemeMode>(
-                      value: item,
-                      groupValue: mode,
-                      onChanged: (value) => ref
-                          .read(themeControllerProvider.notifier)
-                          .setMode(value!),
-                      title: Text(
-                        {
-                          ThemeMode.system: 'Как в системе',
-                          ThemeMode.light: 'Светлая тема',
-                          ThemeMode.dark: 'Тёмная тема',
-                        }[item]!,
+            child: RadioGroup<ThemeMode>(
+              groupValue: mode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeControllerProvider.notifier).setMode(value);
+                }
+              },
+              child: Column(
+                children: ThemeMode.values
+                    .map(
+                      (item) => RadioListTile<ThemeMode>(
+                        value: item,
+                        title: Text(
+                          {
+                            ThemeMode.system: 'Как в системе',
+                            ThemeMode.light: 'Светлая тема',
+                            ThemeMode.dark: 'Тёмная тема',
+                          }[item]!,
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
+                    )
+                    .toList(),
+              ),
             ),
           ),
           const SizedBox(height: 20),

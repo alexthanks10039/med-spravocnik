@@ -237,14 +237,17 @@ class AsyncContent<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (value.isLoading)
+    if (value.isLoading) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(40),
           child: CircularProgressIndicator(),
         ),
       );
-    if (value.error != null) return StatePanel.error(onAction: value.retry);
+    }
+    if (value.error != null) {
+      return StatePanel.error(onAction: value.retry);
+    }
     return data(value.value as T);
   }
 }

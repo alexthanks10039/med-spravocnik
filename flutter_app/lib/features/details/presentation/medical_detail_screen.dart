@@ -25,13 +25,14 @@ class MedicalDetailScreen extends ConsumerWidget {
         ),
       ),
       data: (data) {
-        if (data == null)
+        if (data == null) {
           return const Scaffold(
             body: StatePanel.empty(
               title: 'Материал не найден',
               message: 'Возможно, он был удалён или ещё не загружен офлайн.',
             ),
           );
+        }
         final isDrug = data.type == ContentType.drug;
         final pageTitle = switch (data.type) {
           ContentType.drug => 'Препарат',
