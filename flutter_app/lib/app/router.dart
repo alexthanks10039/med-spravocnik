@@ -59,6 +59,15 @@ final appRouter = GoRouter(
           pageBuilder: (_, state) => _tabPage(state, const CalculatorsScreen()),
         ),
         GoRoute(
+          path: '/calculators/category/:categoryId',
+          pageBuilder: (_, state) => _tabPage(
+            state,
+            CalculatorCategoryScreen(
+              categoryId: state.pathParameters['categoryId']!,
+            ),
+          ),
+        ),
+        GoRoute(
           path: '/articles',
           pageBuilder: (_, state) => _tabPage(
             state,
