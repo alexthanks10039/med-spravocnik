@@ -18,6 +18,8 @@ model User {
   password  String
   role      Role     @default(USER)
   createdAt DateTime @default(now())
+
+  @@index([role])
 }
 
 model Drug {
@@ -32,6 +34,9 @@ model Drug {
   analogs           String[] @default([])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@index([name])
+  @@index([internationalName])
 }
 
 model Disease {
@@ -43,6 +48,9 @@ model Disease {
   treatment   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([icd10])
 }
 
 model Article {
@@ -56,4 +64,7 @@ model Article {
   isPublished Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished, updatedAt])
 }
