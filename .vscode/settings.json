@@ -1,9 +1,0 @@
-{
-  "editor.formatOnSave": true,
-  "prisma.pinToPrisma6": true,
-  "prisma.showPrismaDataPlatformNotification": false,
-  "files.exclude": {
-    "**/.dart_tool": true,
-    "**/dist": true
-  }
-}

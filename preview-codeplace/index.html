@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>МедСправочник Preview</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; background:#f4f7f6; color:#16312d; }
+    * { box-sizing:border-box; }
+    body { margin:0; }
+    header { padding:28px max(20px,calc((100vw - 1080px)/2)); background:#075f55; color:white; }
+    header p { max-width:760px; margin-bottom:0; color:#d9f1ed; }
+    main { max-width:1080px; margin:0 auto; padding:24px 20px 60px; display:grid; gap:20px; }
+    .warning { padding:14px 16px; border:1px solid #e7b83e; background:#fff7db; border-radius:12px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:20px; }
+    section { background:white; border:1px solid #d9e5e2; border-radius:16px; padding:20px; box-shadow:0 8px 28px #16312d0a; }
+    h1,h2,h3 { margin-top:0; }
+    input,select,button { width:100%; padding:11px 12px; border-radius:10px; border:1px solid #b8ccc7; font:inherit; margin:6px 0; }
+    button { background:#08796c; color:white; border:0; cursor:pointer; font-weight:700; }
+    button:hover { background:#05675c; }
+    .item { border-top:1px solid #e4ecea; padding:13px 0; }
+    .item:first-child { border-top:0; }
+    .meta { color:#58736d; font-size:13px; }
+    .result { white-space:pre-wrap; padding:12px; border-radius:10px; background:#eef6f4; min-height:48px; }
+    code { background:#e7efed; padding:2px 5px; border-radius:5px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>МедСправочник Preview</h1>
+    <p>Быстрый публичный предпросмотр архитектуры поиска и калькуляторов. Production-корпус, персональные данные и закрытые индексы сюда не входят.</p>
+  </header>
+  <main>
+    <div class="warning"><strong>Важно:</strong> все документы в Preview синтетические. Результаты нельзя использовать для диагностики или лечения.</div>
+    <div class="grid">
+      <section>
+        <h2>Поиск по протоколам</h2>
+        <input id="query" value="HELLP" aria-label="Поисковый запрос">
+        <button id="search">Найти</button>
+        <div id="search-results"></div>
+      </section>
+      <section>
+        <h2>Демонстрационный BMI</h2>
+        <label>Масса, кг<input id="weight" type="number" value="70"></label>
+        <label>Рост, см<input id="height" type="number" value="175"></label>
+        <button id="calculate">Рассчитать</button>
+        <div id="calc-result" class="result">Введите значения.</div>
+      </section>
+    </div>
+    <section>
+      <h2>Что проверяет эта версия</h2>
+      <p>Preview подтверждает маршруты <code>/knowledge</code> и <code>/calculator</code>, JSON-контракты, поиск, карточку документа и вызов калькулятора. Полная локальная версия использует отдельные FastAPI-сервисы, SQLite-корпус и 152 калькулятора.</p>
+      <p><a href="/docs">OpenAPI документация Preview</a></p>
+    </section>
+  </main>
+  <script>
+    const resultNode = document.querySelector('#search-results');
+    async function search() {
+      const query = document.querySelector('#query').value.trim();
+      if (query.length < 2) return;
+      resultNode.textContent = 'Поиск...';
+      const response = await fetch(`/knowledge/api/search?q=${encodeURIComponent(query)}`);
+      const payload = await response.json();
+      resultNode.innerHTML = payload.results.length ? payload.results.map(item => `
+        <article class="item">
+          <h3>${item.title}</h3>
+          <div class="meta">${item.section_path} · ${item.version}</div>
+          <p>${item.display_text}</p>
+        </article>`).join('') : '<p>Совпадений нет.</p>';
+    }
+    async function calculate() {
+      const response = await fetch('/calculator/api/v1/calculate/bmi', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({params:{weight_kg:Number(weight.value),height_cm:Number(height.value)}})
+      });
+      const payload = await response.json();
+      calcResult.textContent = response.ok
+        ? `${payload.result.value} ${payload.result.unit}\n${payload.result.interpretation.summary}`
+        : payload.detail;
+    }
+    const weight = document.querySelector('#weight');
+    const height = document.querySelector('#height');
+    const calcResult = document.querySelector('#calc-result');
+    document.querySelector('#search').addEventListener('click', search);
+    document.querySelector('#calculate').addEventListener('click', calculate);
+    search();
+  </script>
+</body>
+</html>

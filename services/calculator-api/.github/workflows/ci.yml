@@ -1,0 +1,277 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =============================================================================
+  # Auto-fix: Automatically fix linting issues and commit back
+  # =============================================================================
+  auto-fix:
+    runs-on: ubuntu-latest
+    # Only run on push to develop (not main, not PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev --group dev
+
+      - name: Auto-fix linting issues
+        run: |
+          uv run ruff check src/ tests/ --fix --unsafe-fixes || true
+          uv run ruff format src/ tests/
+
+      - name: Update lock file if needed
+        run: uv lock
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-fix linting and formatting [skip ci]"
+          file_pattern: "src/ tests/ uv.lock"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+  # =============================================================================
+  # Test: Run tests on multiple Python versions
+  # =============================================================================
+  test:
+    runs-on: ubuntu-latest
+    # Don't run tests if auto-fix just committed
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev --group dev
+
+      - name: Lint with ruff
+        run: uv run ruff check . --output-format=github
+
+      - name: Check formatting
+        run: uv run ruff format src/ tests/ scripts/ --check
+
+      - name: Type check with mypy
+        run: uv run mypy --no-incremental src tests
+
+      - name: Check project consistency
+        run: uv run python scripts/check_project_consistency.py --check-tests
+
+      - name: Run tests with coverage
+        run: |
+          uv run pytest tests/ --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=70
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        if: matrix.python-version == '3.12'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+
+  # =============================================================================
+  # Production readiness: enforce deploy-time controls under a prod-like profile
+  # =============================================================================
+  production-readiness:
+    runs-on: ubuntu-latest
+    needs: test
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    env:
+      APP_ENV: production
+      SECURITY_AUTH_ENABLED: "true"
+      SECURITY_API_KEYS: ci-production-key
+      SECURITY_RATE_LIMIT_ENABLED: "true"
+      CORS_ORIGINS: https://ci.example.com
+      TRUST_REVERSE_PROXY_SSL: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev --group dev
+
+      - name: Check production readiness
+        run: uv run python scripts/check_production_readiness.py --service all --environment production
+
+  benchmark-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev --group dev
+
+      - name: Smoke test benchmark evaluator
+        run: |
+          uv run python scripts/benchmark_run_profile.py \
+            --manifest data/agent_decision_bench/profiles/manifest.json \
+            --profile-id sample_full_policy \
+            --output-dir /tmp/benchmark-profile-full
+
+      - name: Smoke test ToolUsageEvent trace profile
+        run: |
+          uv run python scripts/benchmark_run_profile.py \
+            --manifest data/agent_decision_bench/profiles/manifest.json \
+            --profile-id sample_tool_usage_trace \
+            --output-dir /tmp/benchmark-profile-tool-usage
+
+      - name: Smoke test MCP transcript profile
+        run: |
+          uv run python scripts/benchmark_run_profile.py \
+            --manifest data/agent_decision_bench/profiles/manifest.json \
+            --profile-id sample_transcript_trace \
+            --output-dir /tmp/benchmark-profile-transcript
+
+      - name: Smoke test benchmark reporting
+        run: |
+          uv run python scripts/benchmark_build_reports.py \
+            --inputs /tmp/benchmark-profile-full /tmp/benchmark-profile-tool-usage /tmp/benchmark-profile-transcript \
+            --leaderboard-md /tmp/benchmark-leaderboard.md \
+            --time-series-json /tmp/benchmark-time-series.json \
+            --report-index-json /tmp/benchmark-report-index.json
+
+  # =============================================================================
+  # Docker: Build and test Docker image (main branch only)
+  # =============================================================================
+  docker:
+    runs-on: ubuntu-latest
+    needs: [test, production-readiness, benchmark-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t medical-calc-mcp:latest .
+
+      - name: Test Docker image
+        run: |
+          docker run -d --name test-server -p 8000:8000 \
+            -e APP_ENV=production \
+            -e SECURITY_AUTH_ENABLED=true \
+            -e SECURITY_API_KEYS=ci-production-key \
+            -e SECURITY_RATE_LIMIT_ENABLED=true \
+            -e CORS_ORIGINS=https://ci.example.com \
+            -e TRUST_REVERSE_PROXY_SSL=true \
+            medical-calc-mcp:latest
+          echo "Waiting for server to start..."
+          for i in {1..15}; do
+            if curl -sf http://localhost:8000/health -o /dev/null -m 2; then
+              echo "✅ Server is up and responding at /health"
+              curl -s http://localhost:8000/health | jq .
+              break
+            fi
+            echo "Attempt $i: Server not ready yet..."
+            sleep 2
+            if [ $i -eq 15 ]; then
+              echo "❌ ERROR: Server failed to respond after 30 seconds"
+              docker logs test-server
+              exit 1
+            fi
+          done
+          curl -sf http://localhost:8000/ready | jq .
+          docker stop test-server
+          docker rm test-server
+
+  # =============================================================================
+  # Release: Auto-create GitHub Release when version changes on main
+  # =============================================================================
+  release:
+    runs-on: ubuntu-latest
+    needs: [test, production-readiness, benchmark-smoke, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version
+        run: |
+          # Get current version from pyproject.toml
+          CURRENT_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # Get previous version
+          git show HEAD~1:pyproject.toml > /tmp/old_pyproject.toml 2>/dev/null || echo 'version = "0.0.0"' > /tmp/old_pyproject.toml
+          PREV_VERSION=$(grep '^version = ' /tmp/old_pyproject.toml | sed 's/version = "\(.*\)"/\1/' || echo "0.0.0")
+          echo "previous=$PREV_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📦 Version changed: $PREV_VERSION → $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Version unchanged: $CURRENT_VERSION"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.current }}
+          name: Release v${{ steps.version.outputs.current }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false

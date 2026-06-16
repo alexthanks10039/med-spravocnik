@@ -1,0 +1,8 @@
+docling
+tqdm
+numpy
+pandas
+sentence-transformers
+scikit-learn
+python-slugify
+

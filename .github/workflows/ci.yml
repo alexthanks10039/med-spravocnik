@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - project: services/knowledge-api
+            tests: services/knowledge-api/tests
+            extra: ""
+          - project: services/calculator-api
+            tests: services/calculator-api/tests
+            extra: "--ignore=services/calculator-api/tests/test_hf_benchmark_dataset.py"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ${{ matrix.project }}/pyproject.toml
+      - run: python -m pip install -e "./${{ matrix.project }}[dev]"
+      - run: python -m pytest -q "${{ matrix.tests }}" ${{ matrix.extra }}
+
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: preview-codeplace/requirements-dev.txt
+      - run: python -m pip install -r preview-codeplace/requirements-dev.txt
+      - run: python -m pytest -q preview-codeplace/test_preview.py
+
+  flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend-flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.1"
+          cache: true
+      - run: flutter pub get
+      - run: dart analyze lib test
+      - run: flutter test

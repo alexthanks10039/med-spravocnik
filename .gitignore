@@ -1,8 +1,72 @@
-node_modules/
-dist/
+# Secrets and local configuration
 .env
-prisma/dev.db*
-.flutter-web.*.log
-.backend.*.log
+.env.*
+!.env.example
+config/local.*
+**/config.json
+**/windows_config.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.coverage
+**/htmlcov/
+**/*.egg-info/
+
+# Flutter and Dart
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+**/build/
+**/coverage/
+**/ephemeral/
+**/.gradle/
+**/android/local.properties
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+
+# Node and generated sites
+**/node_modules/
+**/dist/
+**/site/
+
+# Runtime data
+database/sqlite/*
+!database/sqlite/.gitkeep
+database/embeddings/*
+!database/embeddings/.gitkeep
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/*.dump
+**/*.bak
+**/*.log
+**/logs/
+
+# Source medical documents and pipeline output
+**/Исходники/
+**/Результат/
+**/ocr_pdfs/
+**/docling_out/
+**/markdown_out/
+**/json_out/
+**/tables_out/
+**/text_out/
+**/reports/*.jsonl
+
+# IDE and operating system
+.vscode/
 .idea/
+*.iml
 .DS_Store
+Thumbs.db
