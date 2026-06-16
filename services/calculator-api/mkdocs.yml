@@ -1,0 +1,101 @@
+site_name: Medical Calculator MCP
+site_url: https://u9401066.github.io/medical-calc-mcp/
+site_description: 152 validated medical calculators across 31 specialties for AI agents via MCP
+site_author: u9401066
+repo_url: https://github.com/u9401066/medical-calc-mcp
+repo_name: u9401066/medical-calc-mcp
+docs_dir: docs_site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - awesome-pages
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Current State (RU): https://github.com/u9401066/medical-calc-mcp/blob/main/docs/CURRENT_STATE_RU.md
+  - Getting Started:
+    - Quick Start: getting-started/quickstart.md
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+  - Calculators:
+    - Overview: calculators/index.md
+    - By Specialty:
+      - Critical Care: calculators/critical-care.md
+      - Cardiology: calculators/cardiology.md
+      - Nephrology: calculators/nephrology.md
+      - Anesthesiology: calculators/anesthesiology.md
+      - Neurology: calculators/neurology.md
+      - Hepatology: calculators/hepatology.md
+      - Psychiatry: calculators/psychiatry.md
+      - Geriatrics: calculators/geriatrics.md
+  - Guideline Coverage: development/guideline-coverage.md
+  - API Reference:
+    - MCP Tools: api/mcp-tools.md
+    - REST API: api/rest-api.md
+  - Development:
+    - Architecture: development/architecture.md
+    - Contributing: development/contributing.md
+    - Roadmap: development/roadmap.md
+    - Agent CDS Gap Plan: https://github.com/u9401066/medical-calc-mcp/blob/main/docs/AGENT_CLINICAL_DECISION_SUPPORT_GAP_AND_BREAKTHROUGH_PLAN.md
+    - Agent E2E Benchmark: https://github.com/u9401066/medical-calc-mcp/blob/main/docs/AGENT_DECISION_SUPPORT_E2E_BENCHMARK.md
+    - Benchmark Usage Guide: https://github.com/u9401066/medical-calc-mcp/blob/main/docs/BENCHMARK_USAGE.md
+  - 繁體中文:
+    - 首頁: zh-tw/index.md
+    - 計算器: zh-tw/calculators.md
+    - 指引覆蓋: zh-tw/guideline-coverage.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/u9401066/medical-calc-mcp
+  version:
+    provider: mike
+    default: stable
+
+copyright: Copyright &copy; 2025-2026 u9401066 | Apache 2.0 License

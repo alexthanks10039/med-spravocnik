@@ -1,65 +1,47 @@
-# Архитектура MED SPRAVOCHNIK
-
-## Обзор
-
-Система состоит из трёх пользовательских поверхностей и общего предметного контура:
+# Архитектура
 
 ```mermaid
 flowchart LR
-  F[Flutter client] -->|будущая интеграция| API[Express REST API]
-  W[Static web client] --> API
-  C[Codex / RAG consumer] --> RAG[RAG endpoint]
-  API --> P[Prisma Client]
-  P --> DB[(SQLite)]
-  RAG --> L[Three RAG spaces]
+    Flutter["Flutter client"]
+    Host["Local reverse proxy :8787"]
+    Knowledge["Knowledge API :8090"]
+    Calculator["Calculator API :8080"]
+    SQLite["Private read-only SQLite"]
+    Index["FTS5 and TF-IDF"]
+    Pipeline["Offline Docling/OCR pipeline"]
+
+    Flutter --> Host
+    Host -->|/knowledge| Knowledge
+    Host -->|/calculator| Calculator
+    Knowledge --> SQLite
+    Knowledge --> Index
+    Pipeline --> SQLite
+    Pipeline --> Index
 ```
 
-Статический клиент обслуживается тем же Express-приложением. Flutter-клиент сейчас работает автономно на локальных данных.
+## Knowledge API
 
-## Backend
+FastAPI читает SQLite через `mode=ro` и `PRAGMA query_only=ON`. Retrieval
+объединяет FTS5, TF-IDF, entities и metadata. Neural vectors и генерация LLM в
+текущей версии не включены.
 
-- `src/server.ts` запускает HTTP-сервер.
-- `src/app.ts` собирает middleware, статические файлы и маршруты.
-- `src/config/env.ts` валидирует окружение через Zod.
-- `src/shared/prisma.ts` содержит единый экземпляр Prisma Client.
-- `src/shared/middleware/` отвечает за JWT, роли и единый формат ошибок.
-- `src/modules/` группирует маршруты по предметным областям.
-- `src/rag/` хранит документы и поиск RAG.
+## Calculator API
 
-Поток запроса: Express → Zod validation → auth/admin middleware при необходимости → Prisma или вычисление → JSON response → error middleware.
-
-## Данные
-
-SQLite используется как локальная база MVP. Prisma-модели:
-
-- `User`: учётная запись и роль;
-- `Drug`: сведения о препарате;
-- `Disease`: заболевание и код МКБ-10;
-- `Article`: публикуемый клинический материал.
-
-Поля `analogs` и `tags` временно хранят JSON-массивы в строках. Для production следует нормализовать их либо в связанные таблицы, либо перейти на БД с нативным JSON.
+Калькуляторы являются отдельным вычислительным продуктом. Их формулы,
+валидация, тесты и provenance не зависят от OCR-корпуса.
 
 ## Flutter
 
-Flutter-клиент организован по feature-first структуре. Riverpod предоставляет зависимости и локальное состояние, GoRouter отвечает за маршрутизацию, SharedPreferences сохраняет пользовательские настройки.
+Клиент получает каталог калькуляторов, схемы форм, результаты вычислений,
+каталог протоколов, поисковые evidence и presentation blocks.
 
-`MedicalRepository` является границей данных. Сейчас используется `OfflineMedicalRepository`; сетевой репозиторий должен реализовать тот же интерфейс и преобразовывать API DTO в domain-модели.
+## Preview
 
-## Безопасность
+`preview-codeplace` является третьим, полностью изолированным приложением. Оно
+имитирует основные HTTP-контракты на трех synthetic-документах и двух
+калькуляторах. Production-код и данные при этом не изменяются.
 
-- пароли хешируются `bcryptjs`;
-- JWT действует 30 дней;
-- изменяющие операции требуют `ADMIN`;
-- Zod проверяет входные данные;
-- `.env` исключён из Git.
+## Архив
 
-Перед production-релизом нужны refresh-токены или сокращённый TTL, rate limiting, security headers, ограниченный CORS, аудит административных изменений и политика ротации секретов.
-
-## Следующие архитектурные шаги
-
-1. Подключить Flutter к REST API через remote repository.
-2. Добавить миграции и seed вместо одного `db push`.
-3. Завершить CRUD, пагинацию и сортировку.
-4. Ввести версионирование медицинского контента и редакционный workflow.
-5. Покрыть формулы калькуляторов unit-тестами.
-6. Перенести production-хранилище на PostgreSQL и добавить полнотекстовый поиск.
+Предыдущий Express/Prisma/PostgreSQL MVP перемещен в `archive`. Он не импортируется
+активным кодом, не запускается CI и не является источником медицинских данных.
