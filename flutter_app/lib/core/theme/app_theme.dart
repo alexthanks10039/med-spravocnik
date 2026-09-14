@@ -26,23 +26,20 @@ abstract final class AppTheme {
       error: dark ? const Color(0xFFFFB3BD) : AppColors.danger,
     );
 
+    final radius = BorderRadius.circular(18);
+    final cardRadius = BorderRadius.circular(20);
+    final outline = scheme.outlineVariant.withValues(alpha: .7);
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
-      scaffoldBackgroundColor: dark
-          ? const Color(0xFF0B1216)
-          : AppColors.canvas,
+      scaffoldBackgroundColor: dark ? const Color(0xFF0B1216) : AppColors.canvas,
       fontFamily: 'Arial',
+      visualDensity: VisualDensity.standard,
       textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -1,
-        ),
-        headlineMedium: TextStyle(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -.5,
-        ),
+        headlineLarge: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -1),
+        headlineMedium: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -.5),
         titleLarge: TextStyle(fontWeight: FontWeight.w700),
         titleMedium: TextStyle(fontWeight: FontWeight.w700),
         bodyLarge: TextStyle(height: 1.55),
@@ -52,48 +49,39 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         color: scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .55)),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: cardRadius, side: BorderSide(color: outline)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: dark ? const Color(0xFF172228) : Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+        border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: outline)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: .7),
-          ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: scheme.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 16,
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: scheme.error, width: 2),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         indicatorColor: scheme.primaryContainer,
         labelTextStyle: WidgetStatePropertyAll(
-          TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: scheme.onSurface,
-          ),
+          TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: scheme.onSurface),
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: dark ? const Color(0xFF10191E) : Colors.white,
         indicatorColor: scheme.primaryContainer,
         selectedIconTheme: IconThemeData(color: scheme.onPrimaryContainer),
-        selectedLabelTextStyle: TextStyle(
-          color: scheme.primary,
-          fontWeight: FontWeight.w700,
-        ),
+        selectedLabelTextStyle: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700),
       ),
     );
   }
