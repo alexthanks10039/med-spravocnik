@@ -14,6 +14,26 @@ NoTransitionPage<void> _tabPage(GoRouterState state, Widget child) {
   return NoTransitionPage<void>(key: state.pageKey, child: child);
 }
 
+CustomTransitionPage<void> _detailPage(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 180),
+    reverseTransitionDuration: const Duration(milliseconds: 140),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(.03, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+            child: child,
+          ),
+        ),
+  );
+}
+
 final appRouter = GoRouter(
   initialLocation: '/',
   errorBuilder: (context, state) => Scaffold(
@@ -25,84 +45,42 @@ final appRouter = GoRouter(
       builder: (context, state, child) =>
           AppShell(path: state.uri.path, child: child),
       routes: [
-        GoRoute(
-          path: '/',
-          pageBuilder: (_, state) => _tabPage(state, const HomeScreen()),
-        ),
-        GoRoute(
-          path: '/search',
-          pageBuilder: (_, state) => _tabPage(state, const SearchScreen()),
-        ),
-        GoRoute(
-          path: '/catalog',
-          pageBuilder: (_, state) => _tabPage(state, const CatalogScreen()),
-        ),
+        GoRoute(path: '/', pageBuilder: (_, state) => _tabPage(state, const HomeScreen())),
+        GoRoute(path: '/search', pageBuilder: (_, state) => _tabPage(state, const SearchScreen())),
+        GoRoute(path: '/catalog', pageBuilder: (_, state) => _tabPage(state, const CatalogScreen())),
         GoRoute(
           path: '/diseases',
-          pageBuilder: (_, state) => _tabPage(
-            state,
-            const ItemListScreen(
-              type: ContentType.disease,
-              title: 'Заболевания',
-            ),
-          ),
+          pageBuilder: (_, state) => _tabPage(state, const ItemListScreen(type: ContentType.disease, title: 'Заболевания')),
         ),
         GoRoute(
           path: '/drugs',
-          pageBuilder: (_, state) => _tabPage(
-            state,
-            const ItemListScreen(type: ContentType.drug, title: 'Препараты'),
-          ),
+          pageBuilder: (_, state) => _tabPage(state, const ItemListScreen(type: ContentType.drug, title: 'Препараты')),
         ),
-        GoRoute(
-          path: '/calculators',
-          pageBuilder: (_, state) => _tabPage(state, const CalculatorsScreen()),
-        ),
+        GoRoute(path: '/calculators', pageBuilder: (_, state) => _tabPage(state, const CalculatorsScreen())),
         GoRoute(
           path: '/calculators/category/:categoryId',
           pageBuilder: (_, state) => _tabPage(
             state,
-            CalculatorCategoryScreen(
-              categoryId: state.pathParameters['categoryId']!,
-            ),
+            CalculatorCategoryScreen(categoryId: state.pathParameters['categoryId']!),
           ),
         ),
         GoRoute(
           path: '/articles',
-          pageBuilder: (_, state) => _tabPage(
-            state,
-            const ItemListScreen(
-              type: ContentType.article,
-              title: 'Рекомендации',
-            ),
-          ),
+          pageBuilder: (_, state) => _tabPage(state, const ItemListScreen(type: ContentType.article, title: 'Рекомендации')),
         ),
-        GoRoute(
-          path: '/saved',
-          pageBuilder: (_, state) => _tabPage(state, const SavedScreen()),
-        ),
-        GoRoute(
-          path: '/history',
-          pageBuilder: (_, state) => _tabPage(state, const HistoryScreen()),
-        ),
-        GoRoute(
-          path: '/notes',
-          pageBuilder: (_, state) => _tabPage(state, const NotesScreen()),
-        ),
-        GoRoute(
-          path: '/profile',
-          pageBuilder: (_, state) => _tabPage(state, const ProfileScreen()),
-        ),
-        GoRoute(
-          path: '/settings',
-          pageBuilder: (_, state) => _tabPage(state, const SettingsScreen()),
-        ),
+        GoRoute(path: '/saved', pageBuilder: (_, state) => _tabPage(state, const SavedScreen())),
+        GoRoute(path: '/history', pageBuilder: (_, state) => _tabPage(state, const HistoryScreen())),
+        GoRoute(path: '/notes', pageBuilder: (_, state) => _tabPage(state, const NotesScreen())),
+        GoRoute(path: '/profile', pageBuilder: (_, state) => _tabPage(state, const ProfileScreen())),
+        GoRoute(path: '/settings', pageBuilder: (_, state) => _tabPage(state, const SettingsScreen())),
       ],
     ),
     GoRoute(
       path: '/detail/:id',
-      builder: (_, state) =>
-          MedicalDetailScreen(id: state.pathParameters['id']!),
+      pageBuilder: (_, state) => _detailPage(
+        state,
+        MedicalDetailScreen(id: state.pathParameters['id']!),
+      ),
     ),
   ],
 );
