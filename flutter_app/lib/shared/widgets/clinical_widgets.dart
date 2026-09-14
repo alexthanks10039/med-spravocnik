@@ -3,14 +3,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/models/medical_content.dart';
 
+abstract final class UiTokens {
+  static const cardRadius = 20.0;
+  static const iconRadius = 14.0;
+  static const cardPadding = 16.0;
+  static const compactGap = 8.0;
+  static const contentGap = 14.0;
+}
+
 class ClinicalSearchField extends StatelessWidget {
-  const ClinicalSearchField({
-    super.key,
-    this.controller,
-    this.onChanged,
-    this.onTap,
-    this.autofocus = false,
-  });
+  const ClinicalSearchField({super.key, this.controller, this.onChanged, this.onTap, this.autofocus = false});
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
@@ -23,34 +25,23 @@ class ClinicalSearchField extends StatelessWidget {
     readOnly: onTap != null,
     onTap: onTap,
     onChanged: onChanged,
-    decoration: const InputDecoration(
+    decoration: InputDecoration(
       hintText: 'Заболевание, препарат или калькулятор',
-      prefixIcon: Icon(Icons.search_rounded),
-      suffixIcon: Icon(Icons.tune_rounded),
+      prefixIcon: const Icon(Icons.search_rounded),
+      suffixIcon: onTap == null ? null : const Icon(Icons.arrow_forward_rounded),
     ),
   );
 }
 
 class SearchShortcut {
   const SearchShortcut(this.label, {this.value, this.icon});
-
   final String label;
   final String? value;
   final IconData? icon;
 }
 
 class ReferenceSearchPanel extends StatelessWidget {
-  const ReferenceSearchPanel({
-    super.key,
-    required this.controller,
-    required this.query,
-    required this.onChanged,
-    required this.shortcuts,
-    this.hintText = 'Поиск по справочнику',
-    this.onShortcut,
-    this.autofocus = false,
-  });
-
+  const ReferenceSearchPanel({super.key, required this.controller, required this.query, required this.onChanged, required this.shortcuts, this.hintText = 'Поиск по справочнику', this.onShortcut, this.autofocus = false});
   final TextEditingController controller;
   final String query;
   final ValueChanged<String> onChanged;
@@ -83,19 +74,15 @@ class ReferenceSearchPanel extends StatelessWidget {
                 ),
         ),
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: UiTokens.compactGap),
       Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: UiTokens.compactGap,
+        runSpacing: UiTokens.compactGap,
         children: shortcuts.map((shortcut) {
-          final selected =
-              shortcut.value != null &&
-              shortcut.value!.toLowerCase() == query.trim().toLowerCase();
+          final selected = shortcut.value != null && shortcut.value!.toLowerCase() == query.trim().toLowerCase();
           return FilterChip(
             selected: selected,
-            avatar: shortcut.icon == null
-                ? null
-                : Icon(shortcut.icon, size: 18),
+            avatar: shortcut.icon == null ? null : Icon(shortcut.icon, size: 18),
             label: Text(shortcut.label),
             onSelected: (_) {
               if (onShortcut != null) {
@@ -104,9 +91,7 @@ class ReferenceSearchPanel extends StatelessWidget {
               }
               final value = shortcut.value ?? shortcut.label;
               controller.text = value;
-              controller.selection = TextSelection.collapsed(
-                offset: value.length,
-              );
+              controller.selection = TextSelection.collapsed(offset: value.length);
               onChanged(value);
             },
           );
@@ -125,9 +110,7 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(
-        child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-      ),
+      Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge)),
       if (action != null) TextButton(onPressed: onAction, child: Text(action!)),
     ],
   );
@@ -140,70 +123,48 @@ class MedicalItemCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap ?? () => context.push('/detail/${item.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  item.icon,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
+  Widget build(BuildContext context) => Card(
+    child: InkWell(
+      borderRadius: BorderRadius.circular(UiTokens.cardRadius),
+      onTap: onTap ?? () => context.push('/detail/${item.id}'),
+      child: Padding(
+        padding: const EdgeInsets.all(UiTokens.cardPadding),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(UiTokens.iconRadius),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.title,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                        if (item.badge != null) _Badge(item.badge!),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      item.subtitle,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      item.category,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(item.icon, color: Theme.of(context).colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(width: UiTokens.contentGap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: Text(item.title, style: Theme.of(context).textTheme.titleMedium)),
+                      if (item.badge != null) _Badge(item.badge!),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(item.subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: 10),
+                  Text(item.category, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w700, fontSize: 12)),
+                ],
               ),
-              trailing ?? const Icon(Icons.chevron_right_rounded),
-            ],
-          ),
+            ),
+            trailing ?? const Icon(Icons.chevron_right_rounded),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _Badge extends StatelessWidget {
@@ -217,20 +178,12 @@ class _Badge extends StatelessWidget {
       color: Theme.of(context).colorScheme.secondaryContainer,
       borderRadius: BorderRadius.circular(99),
     ),
-    child: Text(
-      text,
-      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-    ),
+    child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
   );
 }
 
 class AsyncContent<T> extends StatelessWidget {
-  const AsyncContent({
-    super.key,
-    required this.value,
-    required this.data,
-    this.emptyText = 'Здесь пока ничего нет',
-  });
+  const AsyncContent({super.key, required this.value, required this.data, this.emptyText = 'Здесь пока ничего нет'});
   final AsyncSnapshotLike<T> value;
   final Widget Function(T data) data;
   final String emptyText;
@@ -238,27 +191,15 @@ class AsyncContent<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (value.isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
     }
-    if (value.error != null) {
-      return StatePanel.error(onAction: value.retry);
-    }
+    if (value.error != null) return StatePanel.error(onAction: value.retry);
     return data(value.value as T);
   }
 }
 
 class AsyncSnapshotLike<T> {
-  const AsyncSnapshotLike({
-    this.value,
-    this.error,
-    this.isLoading = false,
-    this.retry,
-  });
+  const AsyncSnapshotLike({this.value, this.error, this.isLoading = false, this.retry});
   final T? value;
   final Object? error;
   final bool isLoading;
@@ -266,29 +207,9 @@ class AsyncSnapshotLike<T> {
 }
 
 class StatePanel extends StatelessWidget {
-  const StatePanel({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-  const StatePanel.empty({
-    super.key,
-    this.title = 'Ничего не найдено',
-    this.message = 'Попробуйте изменить запрос или фильтры',
-    this.actionLabel,
-    this.onAction,
-  }) : icon = Icons.search_off_rounded;
-  const StatePanel.error({
-    super.key,
-    this.title = 'Не удалось загрузить данные',
-    this.message =
-        'Проверьте соединение. Сохранённые материалы доступны офлайн.',
-    this.actionLabel = 'Повторить',
-    this.onAction,
-  }) : icon = Icons.cloud_off_rounded;
+  const StatePanel({super.key, required this.icon, required this.title, required this.message, this.actionLabel, this.onAction});
+  const StatePanel.empty({super.key, this.title = 'Ничего не найдено', this.message = 'Попробуйте изменить запрос или фильтры', this.actionLabel, this.onAction}) : icon = Icons.search_off_rounded;
+  const StatePanel.error({super.key, this.title = 'Не удалось загрузить данные', this.message = 'Проверьте соединение. Сохранённые материалы доступны офлайн.', this.actionLabel = 'Повторить', this.onAction}) : icon = Icons.cloud_off_rounded;
   final IconData icon;
   final String title;
   final String message;
@@ -306,25 +227,12 @@ class StatePanel extends StatelessWidget {
           children: [
             Icon(icon, size: 52, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+            Text(message, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             if (actionLabel != null) ...[
               const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
+              FilledButton.tonal(onPressed: onAction, child: Text(actionLabel!)),
             ],
           ],
         ),
