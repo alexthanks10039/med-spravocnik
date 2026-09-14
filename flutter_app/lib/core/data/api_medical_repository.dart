@@ -36,10 +36,17 @@ class ApiMedicalRepository implements MedicalRepository {
   @override
   Future<List<MedicalItem>> search(String query) async {
     if (query.trim().isEmpty) return recent();
+    final q = query.trim();
+    final responses = await Future.wait([
+      _get('/diseases', {'q': q}),
+      _get('/drugs', {'q': q}),
+      _get('/articles', {'q': q}),
+    ]);
+    final types = const [ContentType.disease, ContentType.drug, ContentType.article];
     final result = <MedicalItem>[];
-    for (final type in const [ContentType.disease, ContentType.drug, ContentType.article]) {
-      final data = await _get(_path(type), {'q': query.trim()}) as List<dynamic>;
-      result.addAll(data.map((x) => _map(type, x as Map<String, dynamic>)));
+    for (var i = 0; i < responses.length; i++) {
+      final data = responses[i] as List<dynamic>;
+      result.addAll(data.map((x) => _map(types[i], x as Map<String, dynamic>)));
     }
     return result;
   }
