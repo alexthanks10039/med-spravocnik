@@ -18,6 +18,8 @@ class DoctorReferenceApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
+      highContrastTheme: AppTheme.lightHighContrast,
+      highContrastDarkTheme: AppTheme.darkHighContrast,
       themeMode: themeMode,
       builder: (context, child) {
         final media = MediaQuery.of(context);
@@ -30,7 +32,7 @@ class DoctorReferenceApp extends ConsumerWidget {
           child: Semantics(
             container: true,
             label: accessibility ? 'Режим доступности включён' : null,
-            child: child!,
+            child: child ?? const SizedBox.shrink(),
           ),
         );
       },
