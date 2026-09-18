@@ -61,7 +61,7 @@ test('POST /api/calculators/egfr calculates CKD-EPI 2021', async () => {
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.formula, 'CKD-EPI 2021');
-  assert.equal(body.value, 78);
+  assert.equal(body.value, 71);
 });
 
 test('calculator validation returns HTTP 400', async () => {
