@@ -103,21 +103,28 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       ]))),
       const SizedBox(height: 16),
       if (notes.isEmpty) const StatePanel.empty(title: 'Заметок пока нет', message: 'Добавьте личную заметку к материалу или создайте её здесь.'),
-      ...notes.asMap().entries.map((entry) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Card(child: ListTile(
-          contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-          leading: const Icon(Icons.sticky_note_2_outlined),
-          title: Text(entry.value),
-          subtitle: const Padding(padding: EdgeInsets.only(top: 8), child: Text('Сохранено на устройстве')),
-          trailing: IconButton(
-            tooltip: 'Удалить заметку',
-            icon: const Icon(Icons.delete_outline_rounded),
-            onPressed: () => ref.read(notesProvider.notifier).removeAt(entry.key),
+      ...notes.asMap().entries.map(
+        (entry) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Card(
+            child: ListTile(
+              contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+              leading: const Icon(Icons.sticky_note_2_outlined),
+              title: Text(entry.value),
+              subtitle: const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('Сохранено на устройстве'),
+              ),
+              trailing: IconButton(
+                tooltip: 'Удалить заметку',
+                icon: const Icon(Icons.delete_outline_rounded),
+                onPressed: () => ref.read(notesProvider.notifier).removeAt(entry.key),
+              ),
+            ),
           ),
-        )),
-      )),
-    ]);
+        ),
+      ),
+    ]));
   }
 }
 
