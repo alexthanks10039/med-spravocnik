@@ -10,6 +10,8 @@ final bookmarkProvider = NotifierProvider<BookmarkController, Map<String, Set<St
 class BookmarkController extends Notifier<Map<String, Set<String>>> {
   static const _storageKey = 'document_section_bookmarks_v1';
   bool _disposed = false;
+  int _revision = 0;
+  Future<void> _saveQueue = Future<void>.value();
 
   @override
   Map<String, Set<String>> build() {
@@ -28,14 +30,16 @@ class BookmarkController extends Notifier<Map<String, Set<String>>> {
     final sections = next.putIfAbsent(documentId, () => <String>{});
     if (!sections.add(section)) sections.remove(section);
     if (sections.isEmpty) next.remove(documentId);
+    _revision++;
     state = next;
     _save(next);
   }
 
   Future<void> _load() async {
+    final revision = _revision;
     final preferences = await SharedPreferences.getInstance();
     final raw = preferences.getString(_storageKey);
-    if (_disposed || raw == null) return;
+    if (_disposed || revision != _revision || raw == null) return;
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       state = {
@@ -47,13 +51,15 @@ class BookmarkController extends Notifier<Map<String, Set<String>>> {
     }
   }
 
-  Future<void> _save(Map<String, Set<String>> value) async {
+  void _save(Map<String, Set<String>> value) {
     final encoded = {
       for (final entry in value.entries) entry.key: entry.value.toList()..sort(),
     };
-    await (await SharedPreferences.getInstance()).setString(
-      _storageKey,
-      jsonEncode(encoded),
-    );
+    final snapshot = jsonEncode(encoded);
+    _saveQueue = _saveQueue.then((_) async {
+      if (_disposed) return;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_storageKey, snapshot);
+    });
   }
 }
