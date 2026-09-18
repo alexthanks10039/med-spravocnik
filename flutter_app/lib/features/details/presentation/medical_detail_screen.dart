@@ -58,16 +58,16 @@ class MedicalDetailScreen extends ConsumerWidget {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 920),
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 12, 18, 40),
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 48),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Container(
-                              width: 58,
-                              height: 58,
-                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(18)),
-                              child: Icon(data.icon, size: 30),
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(20)),
+                              child: Icon(data.icon, size: 32),
                             ),
                             const SizedBox(width: 16),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -78,6 +78,19 @@ class MedicalDetailScreen extends ConsumerWidget {
                             ])),
                           ]),
                           const SizedBox(height: 24),
+                          FadeSlideIn(
+                            delay: const Duration(milliseconds: 60),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: data.sections.keys.map((name) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Chip(label: Text(name)),
+                                )).toList(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
                           if (!isDrug) _ClinicalAlert(text: data.sections['Красные флаги']),
                           ...data.sections.entries.map((entry) => _SectionCard(
                                 documentId: data.id,
@@ -124,6 +137,7 @@ class _SectionCard extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
+        clipBehavior: Clip.antiAlias,
         child: ExpansionTile(
           initiallyExpanded: initiallyExpanded || jumpTo,
           title: Semantics(header: true, child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
@@ -136,8 +150,9 @@ class _SectionCard extends ConsumerWidget {
               icon: Icon(saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
             ),
           ),
-          childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-          children: [Align(alignment: Alignment.centerLeft, child: Text(text, style: Theme.of(context).textTheme.bodyLarge))],
+          tilePadding: const EdgeInsets.fromLTRB(18, 6, 10, 6),
+          childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+          children: [Align(alignment: Alignment.centerLeft, child: Text(text, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.62)))],
         ),
       ),
     );
