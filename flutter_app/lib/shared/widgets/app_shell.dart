@@ -142,12 +142,12 @@ class _BubbleNavigationBar extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     return Material(
       color: colors.surface,
-      elevation: 12,
-      shadowColor: Colors.black.withValues(alpha: .2),
+      elevation: 0,
+      shadowColor: Colors.transparent,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 9),
           child: Row(
             children: [
               for (var index = 0; index < destinations.length; index++)
@@ -188,12 +188,12 @@ class _BubbleNavigationItem extends StatelessWidget {
       child: Tooltip(
         message: destination.label,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 320),
-            curve: Curves.easeOutBack,
-            height: 48,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            height: 50,
             margin: const EdgeInsets.symmetric(horizontal: 3),
             padding: EdgeInsets.symmetric(horizontal: selected ? 12 : 8),
             decoration: BoxDecoration(
@@ -205,7 +205,7 @@ class _BubbleNavigationItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AnimatedScale(
-                  scale: selected ? 1.08 : 1,
+                  scale: selected ? 1.04 : 1,
                   duration: const Duration(milliseconds: 220),
                   child: Icon(
                     selected ? destination.selectedIcon : destination.icon,
