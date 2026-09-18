@@ -182,7 +182,7 @@ class _Badge extends StatelessWidget {
 class StatePanel extends StatelessWidget {
   const StatePanel({super.key, required this.icon, required this.title, required this.message, this.actionLabel, this.onAction});
   const StatePanel.empty({super.key, this.title = 'Ничего не найдено', this.message = 'Попробуйте изменить запрос или фильтры', this.actionLabel, this.onAction}) : icon = Icons.search_off_rounded;
-  const StatePanel.error({super.key, this.title = 'Не удалось загрузить данные', this.message = 'Проверьте соединение. Сохранённые материалы доступны офлайн.', this.actionLabel = 'Повторить', this.onAction}) : icon = Icons.cloud_off_rounded;
+  const StatePanel.error({super.key, this.title = 'Не удалось загрузить данные', this.message = 'Проверьте соединение. Сохранённые материалы доступны офлайн.', this.actionLabel, this.onAction}) : icon = Icons.cloud_off_rounded;
   final IconData icon;
   final String title;
   final String message;
