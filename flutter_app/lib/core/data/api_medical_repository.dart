@@ -216,8 +216,12 @@ class ResilientMedicalRepository implements MedicalRepository {
 
   @override
   Future<MedicalItem?> getById(String id) async {
-    final remoteItem = await _run(() => remote.getById(id), () => null);
-    return remoteItem ?? offline.getById(id);
+    try {
+      final remoteItem = await remote.getById(id);
+      return remoteItem ?? offline.getById(id);
+    } catch (_) {
+      return offline.getById(id);
+    }
   }
 
   @override
