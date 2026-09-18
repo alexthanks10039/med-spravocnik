@@ -80,8 +80,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         (entry) => FadeSlideIn(
                           delay: Duration(milliseconds: 30 * entry.key),
                           child: Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: MedicalItemCard(entry.value),
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: MedicalItemCard(entry.value),
+                          ),
                         ),
                       ),
                     ],
