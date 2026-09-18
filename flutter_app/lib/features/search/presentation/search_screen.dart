@@ -76,10 +76,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 12),
-                      ...items.map(
-                        (item) => Padding(
+                      ...items.asMap().entries.map(
+                        (entry) => FadeSlideIn(
+                          delay: Duration(milliseconds: 30 * entry.key),
+                          child: Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: MedicalItemCard(item),
+                          child: MedicalItemCard(entry.value),
                         ),
                       ),
                     ],
