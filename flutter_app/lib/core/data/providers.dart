@@ -27,9 +27,21 @@ final favoriteIdsProvider = NotifierProvider<FavoriteController, Set<String>>(Fa
 
 final notesProvider = NotifierProvider<NotesController, List<String>>(NotesController.new);
 
+final historyIdsProvider =
+    NotifierProvider<HistoryController, List<String>>(HistoryController.new);
+
+final historyItemsProvider = FutureProvider<List<MedicalItem>>((ref) async {
+  final ids = ref.watch(historyIdsProvider);
+  final repository = ref.watch(medicalRepositoryProvider);
+  final items = await Future.wait(ids.map(repository.getById));
+  return items.whereType<MedicalItem>().toList(growable: false);
+});
+
 class NotesController extends Notifier<List<String>> {
   static const _storageKey = 'clinical_notes';
   bool _disposed = false;
+  int _revision = 0;
+  Future<void> _saveQueue = Future<void>.value();
 
   @override
   List<String> build() {
@@ -42,6 +54,8 @@ class NotesController extends Notifier<List<String>> {
     final value = note.trim();
     if (value.isEmpty) return;
     final next = [value, ...state];
+    _revision++;
+    _revision++;
     state = next;
     _save(next);
   }
@@ -49,25 +63,86 @@ class NotesController extends Notifier<List<String>> {
   void removeAt(int index) {
     if (index < 0 || index >= state.length) return;
     final next = [...state]..removeAt(index);
+    _revision++;
     state = next;
     _save(next);
   }
 
   Future<void> _load() async {
+    final revision = _revision;
     final preferences = await SharedPreferences.getInstance();
-    if (_disposed) return;
+    if (_disposed || revision != _revision) return;
     state = preferences.getStringList(_storageKey) ?? <String>[];
   }
 
-  Future<void> _save(List<String> notes) async {
+  void _save(List<String> notes) {
+    final snapshot = List<String>.unmodifiable(notes);
+    _saveQueue = _saveQueue.then((_) async {
+      if (_disposed) return;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(_storageKey, snapshot);
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+}
+
+class HistoryController extends Notifier<List<String>> {
+  static const _storageKey = 'clinical_history_v1';
+  bool _disposed = false;
+  int _revision = 0;
+  Future<void> _saveQueue = Future<void>.value();
+
+  @override
+  List<String> build() {
+    ref.onDispose(() => _disposed = true);
+    _load();
+    return <String>[];
+  }
+
+  void record(String id) {
+    final normalized = id.trim();
+    if (normalized.isEmpty) return;
+    final next = [normalized, ...state.where((item) => item != normalized)]
+        .take(20)
+        .toList(growable: false);
+    _revision++;
+    state = next;
+    _save(next);
+  }
+
+  void clear() {
+    _revision++;
+    state = <String>[];
+    _save(const <String>[]);
+  }
+
+  Future<void> _load() async {
+    final revision = _revision;
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setStringList(_storageKey, notes);
+    if (_disposed || revision != _revision) return;
+    state = preferences.getStringList(_storageKey) ?? <String>[];
+  }
+
+  void _save(List<String> ids) {
+    final snapshot = List<String>.unmodifiable(ids);
+    _saveQueue = _saveQueue.then((_) async {
+      if (_disposed) return;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(_storageKey, snapshot);
+    });
   }
 }
 
 class FavoriteController extends Notifier<Set<String>> {
   static const _storageKey = 'favorite_medical_item_ids';
   bool _disposed = false;
+  int _revision = 0;
+  Future<void> _saveQueue = Future<void>.value();
 
   @override
   Set<String> build() {
@@ -86,13 +161,18 @@ class FavoriteController extends Notifier<Set<String>> {
   }
 
   Future<void> _load() async {
+    final revision = _revision;
     final preferences = await SharedPreferences.getInstance();
-    if (_disposed) return;
+    if (_disposed || revision != _revision) return;
     state = (preferences.getStringList(_storageKey) ?? const <String>[]).toSet();
   }
 
-  Future<void> _save(Set<String> ids) async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setStringList(_storageKey, ids.toList()..sort());
+  void _save(Set<String> ids) {
+    final snapshot = [...ids]..sort();
+    _saveQueue = _saveQueue.then((_) async {
+      if (_disposed) return;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setStringList(_storageKey, snapshot);
+    });
   }
 }
