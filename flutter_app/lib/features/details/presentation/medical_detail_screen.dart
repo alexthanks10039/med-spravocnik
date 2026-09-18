@@ -123,7 +123,7 @@ class _MedicalDetailScreenState extends ConsumerState<MedicalDetailScreen> {
                                 title: entry.key,
                                 text: entry.value,
                                 initiallyExpanded: entry.key == 'Кратко' || entry.key == 'Дозирование',
-                                jumpTo: section == entry.key,
+                                jumpTo: widget.section == entry.key,
                               )),
                           const SizedBox(height: 8),
                           SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => context.push('/notes?source=${data.id}'), icon: const Icon(Icons.note_add_outlined), label: const Text('Добавить заметку'))),
