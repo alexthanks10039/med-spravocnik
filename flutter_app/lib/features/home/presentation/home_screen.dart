@@ -93,10 +93,16 @@ class HomeScreen extends ConsumerWidget {
                       ]),
                     ),
                   )
-                : Column(children: items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 9),
-                    child: MedicalItemCard(item),
-                  )).toList()),
+                : Column(
+                    children: items
+                        .map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 9),
+                            child: MedicalItemCard(item),
+                          ),
+                        )
+                        .toList(),
+                  ),
           ),
           const SizedBox(height: 18),
           Card(
