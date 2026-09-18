@@ -143,7 +143,7 @@ class MedicalItemCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap ?? () => context.push('/detail/' + item.id),
+        onTap: onTap ?? () => context.push('/detail/${item.id}'),
         child: Padding(
           padding: const EdgeInsets.all(UiTokens.cardPadding),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
