@@ -67,24 +67,10 @@ class _CalculatorsScreenState extends ConsumerState<CalculatorsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
+          ClinicalSearchField(
             controller: search,
             onChanged: (value) => setState(() => query = value),
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: 'Найти калькулятор или направление',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: query.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Очистить поиск',
-                      onPressed: () {
-                        search.clear();
-                        setState(() => query = '');
-                      },
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-            ),
+            hintText: 'Найти калькулятор или направление',
           ),
           const SizedBox(height: 10),
           _QuickAccessBar(
