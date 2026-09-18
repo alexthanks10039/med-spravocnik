@@ -152,7 +152,20 @@ class _SectionCard extends ConsumerWidget {
           ),
           tilePadding: const EdgeInsets.fromLTRB(18, 6, 10, 6),
           childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
-          children: [Align(alignment: Alignment.centerLeft, child: Text(text, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.62)))],
+          children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: Align(alignment: Alignment.centerLeft, child: Text(text, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.62)))),
+              const SizedBox(width: 12),
+              IconButton(
+                tooltip: 'Скопировать раздел',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: '$title\\n$text'));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Раздел «$title» скопирован')));
+                },
+                icon: const Icon(Icons.copy_all_rounded),
+              ),
+            ]),
+          ],
         ),
       ),
     );
