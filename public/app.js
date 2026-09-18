@@ -34,8 +34,21 @@ async function checkHealth() {
   }
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderEmptyState(text) {
-  ragResults.innerHTML = `<div class="empty-state">${text}</div>`;
+  ragResults.replaceChildren();
+  const state = document.createElement("div");
+  state.className = "empty-state";
+  state.textContent = text;
+  ragResults.appendChild(state);
 }
 
 function label(space) {
@@ -60,8 +73,9 @@ async function loadRag() {
 
   try {
     const response = await fetch(`/api/rag?${params.toString()}`);
+    if (!response.ok) throw new Error(`RAG request failed: ${response.status}`);
     const data = await response.json();
-    const items = data.items || [];
+    const items = Array.isArray(data.items) ? data.items : [];
 
     ragMeta.textContent = items.length ? `Найдено: ${items.length}` : "Совпадений нет";
 
@@ -72,10 +86,10 @@ async function loadRag() {
 
     ragResults.innerHTML = items.map((item) => `
       <article class="rag-card">
-        <small>${label(item.space)}</small>
-        <h3>${item.title}</h3>
-        <p>${item.summary}</p>
-        <div class="tags">${item.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
+        <small>${escapeHtml(label(item.space))}</small>
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.summary)}</p>
+        <div class="tags">${(Array.isArray(item.tags) ? item.tags : []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>
       </article>
     `).join("");
   } catch {
@@ -115,6 +129,7 @@ document.querySelector("#calculate").onclick = async () => {
       })
     });
     const data = await response.json();
+    if (!response.ok) throw new Error(data.message || `BMI request failed: ${response.status}`);
     result.textContent = data.value ? `${data.value} ${data.unit} • ${bmiLabel(data.category)}` : (data.message || "Нет данных");
   } catch {
     result.textContent = "Не удалось выполнить расчёт BMI.";
@@ -136,6 +151,7 @@ document.querySelector("#calculateEgfr").onclick = async () => {
       })
     });
     const data = await response.json();
+    if (!response.ok) throw new Error(data.message || `eGFR request failed: ${response.status}`);
     result.textContent = data.value ? `${data.value} ${data.unit} • ${data.formula}` : (data.message || "Нет данных");
   } catch {
     result.textContent = "Не удалось выполнить расчёт eGFR.";
