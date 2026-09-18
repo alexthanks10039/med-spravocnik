@@ -190,10 +190,6 @@ class ResilientMedicalRepository implements MedicalRepository {
   }
 
   @override
-  Future<List<MedicalItem>> search(String q) =>
-      _run(() => remote.search(q), () => offline.search(q));
-
-  @override
   Future<List<MedicalItem>> search(String q) async {
     final remoteItems = await _run(
       () => remote.search(q),
