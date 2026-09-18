@@ -218,7 +218,7 @@ class ResilientMedicalRepository implements MedicalRepository {
   Future<MedicalItem?> getById(String id) async {
     try {
       final remoteItem = await remote.getById(id);
-      return remoteItem ?? offline.getById(id);
+      return remoteItem ?? await offline.getById(id);
     } catch (_) {
       return offline.getById(id);
     }
