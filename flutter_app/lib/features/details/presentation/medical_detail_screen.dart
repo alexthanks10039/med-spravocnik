@@ -185,7 +185,7 @@ class _SectionCard extends ConsumerWidget {
               IconButton(
                 tooltip: 'Скопировать раздел',
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: '$title\\n$text'));
+                  Clipboard.setData(ClipboardData(text: '$title\n$text'));
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Раздел «$title» скопирован')));
                 },
                 icon: const Icon(Icons.copy_all_rounded),
