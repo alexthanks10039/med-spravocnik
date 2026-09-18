@@ -55,7 +55,6 @@ class NotesController extends Notifier<List<String>> {
     if (value.isEmpty) return;
     final next = [value, ...state];
     _revision++;
-    _revision++;
     state = next;
     _save(next);
   }
@@ -151,6 +150,7 @@ class FavoriteController extends Notifier<Set<String>> {
     if (!next.add(id)) {
       next.remove(id);
     }
+    _revision++;
     state = next;
     _save(next);
   }
