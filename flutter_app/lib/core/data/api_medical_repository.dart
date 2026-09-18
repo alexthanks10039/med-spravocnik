@@ -194,12 +194,32 @@ class ResilientMedicalRepository implements MedicalRepository {
       _run(() => remote.search(q), () => offline.search(q));
 
   @override
-  Future<List<MedicalItem>> byType(ContentType t) =>
-      _run(() => remote.byType(t), () => offline.byType(t));
+  Future<List<MedicalItem>> search(String q) async {
+    final remoteItems = await _run(
+      () => remote.search(q),
+      () => <MedicalItem>[],
+    );
+    final localCalculators = await offline.search(q).then(
+      (items) => items.where((item) => item.type == ContentType.calculator),
+    );
+    final ids = remoteItems.map((item) => item.id).toSet();
+    return [
+      ...remoteItems,
+      ...localCalculators.where((item) => ids.add(item.id)),
+    ];
+  }
 
   @override
-  Future<MedicalItem?> getById(String id) =>
-      _run(() => remote.getById(id), () => offline.getById(id));
+  Future<List<MedicalItem>> byType(ContentType t) {
+    if (t == ContentType.calculator) return offline.byType(t);
+    return _run(() => remote.byType(t), () => offline.byType(t));
+  }
+
+  @override
+  Future<MedicalItem?> getById(String id) async {
+    final remoteItem = await _run(() => remote.getById(id), () => null);
+    return remoteItem ?? offline.getById(id);
+  }
 
   @override
   Future<List<MedicalItem>> recent() =>
