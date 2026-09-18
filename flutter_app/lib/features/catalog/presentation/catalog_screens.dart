@@ -81,8 +81,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           if (query.trim().isEmpty) ...[
             Text('Категории', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            ...entries.map(
-              (entry) => Padding(
+            ...entries.asMap().entries.map(
+              (indexed) => FadeSlideIn(
+                delay: Duration(milliseconds: indexed.key * 45),
+                child: Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Card(
                   child: ListTile(
@@ -97,7 +99,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                       child: Text(entry.subtitle),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.go(entry.path),
+                    onTap: () => context.go(indexed.value.path),
                   ),
                 ),
               ),
