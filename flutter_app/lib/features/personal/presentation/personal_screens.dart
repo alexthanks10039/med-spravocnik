@@ -31,7 +31,25 @@ class SavedScreen extends ConsumerWidget {
         data: (items) {
           final saved = items.where((item) => ids.contains(item.id)).toList();
           if (saved.isEmpty) return const StatePanel.empty(title: 'Избранное пусто', message: 'Сохраняйте материалы, чтобы они были доступны здесь и офлайн.');
-          return Column(children: saved.map((item) => Padding(padding: const EdgeInsets.only(bottom: 10), child: MedicalItemCard(item, trailing: IconButton(tooltip: 'Убрать из избранного', icon: const Icon(Icons.bookmark_rounded), onPressed: () => ref.read(favoriteIdsProvider.notifier).toggle(item.id))))).toList());
+          return Column(
+            children: saved
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: MedicalItemCard(
+                      item,
+                      trailing: IconButton(
+                        tooltip: 'Убрать из избранного',
+                        icon: const Icon(Icons.bookmark_rounded),
+                        onPressed: () => ref
+                            .read(favoriteIdsProvider.notifier)
+                            .toggle(item.id),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          );
         },
       ),
     ]));
@@ -43,7 +61,23 @@ class HistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => ScreenFrame(title: 'История', actions: [TextButton(onPressed: () {}, child: const Text('Очистить'))], child: ref.watch(recentItemsProvider).when(
     loading: () => const LinearProgressIndicator(), error: (_, _) => const StatePanel.error(),
-    data: (items) => Column(children: items.asMap().entries.map((entry) => Padding(padding: const EdgeInsets.only(bottom: 10), child: MedicalItemCard(entry.value, trailing: Text(entry.key < 2 ? 'Сегодня' : 'Вчера', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)))).toList()),
+    data: (items) => Column(
+      children: items.asMap().entries.map(
+        (entry) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: MedicalItemCard(
+            entry.value,
+            trailing: Text(
+              entry.key < 2 ? 'Сегодня' : 'Вчера',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ).toList(),
+    ),
   ));
 }
 
