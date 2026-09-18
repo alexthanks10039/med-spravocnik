@@ -28,6 +28,7 @@ function setApiStatus(mode, text) {
 async function checkHealth() {
   try {
     const response = await fetch("/api/health");
+    if (!response.ok) throw new Error(`Health request failed: ${response.status}`);
     const data = await response.json();
     setApiStatus(data.status === "ok" ? "ok" : "error", data.status === "ok" ? "API подключен" : "API недоступен");
   } catch {
@@ -72,8 +73,8 @@ async function loadRag() {
   ragMeta.textContent = "Загрузка...";
   renderEmptyState("Ищем релевантные материалы...");
 
+  const requestId = ++ragRequestId;
   try {
-    const requestId = ++ragRequestId;
     const response = await fetch(`/api/rag?${params.toString()}`);
     if (!response.ok) throw new Error(`RAG request failed: ${response.status}`);
     const data = await response.json();
@@ -96,6 +97,7 @@ async function loadRag() {
       </article>
     `).join("");
   } catch {
+    if (requestId !== ragRequestId) return;
     ragMeta.textContent = "Ошибка запроса";
     renderEmptyState("Не удалось загрузить RAG-результаты.");
   }
