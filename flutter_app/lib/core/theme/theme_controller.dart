@@ -8,21 +8,33 @@ final themeControllerProvider = NotifierProvider<ThemeController, ThemeMode>(
 
 class ThemeController extends Notifier<ThemeMode> {
   static const _key = 'theme_mode';
+  bool _disposed = false;
+  int _revision = 0;
 
   @override
   ThemeMode build() {
+    ref.onDispose(() => _disposed = true);
     _restore();
     return ThemeMode.system;
   }
 
   Future<void> _restore() async {
-    final value = (await SharedPreferences.getInstance()).getString(_key);
-    if (value == 'light') state = ThemeMode.light;
-    if (value == 'dark') state = ThemeMode.dark;
+    final revision = _revision;
+    final preferences = await SharedPreferences.getInstance();
+    final value = preferences.getString(_key);
+    if (_disposed || revision != _revision) return;
+    state = switch (value) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
   }
 
   Future<void> setMode(ThemeMode mode) async {
+    _revision++;
     state = mode;
-    await (await SharedPreferences.getInstance()).setString(_key, mode.name);
+    final preferences = await SharedPreferences.getInstance();
+    if (_disposed) return;
+    await preferences.setString(_key, mode.name);
   }
 }
