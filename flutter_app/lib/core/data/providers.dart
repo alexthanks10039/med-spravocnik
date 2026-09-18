@@ -25,6 +25,46 @@ final itemProvider = FutureProvider.family<MedicalItem?, String>((ref, id) => re
 
 final favoriteIdsProvider = NotifierProvider<FavoriteController, Set<String>>(FavoriteController.new);
 
+final notesProvider = NotifierProvider<NotesController, List<String>>(NotesController.new);
+
+class NotesController extends Notifier<List<String>> {
+  static const _storageKey = 'clinical_notes';
+  bool _disposed = false;
+
+  @override
+  List<String> build() {
+    ref.onDispose(() => _disposed = true);
+    _load();
+    return <String>[];
+  }
+
+  void add(String note) {
+    final value = note.trim();
+    if (value.isEmpty) return;
+    final next = [value, ...state];
+    state = next;
+    _save(next);
+  }
+
+  void removeAt(int index) {
+    if (index < 0 || index >= state.length) return;
+    final next = [...state]..removeAt(index);
+    state = next;
+    _save(next);
+  }
+
+  Future<void> _load() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (_disposed) return;
+    state = preferences.getStringList(_storageKey) ?? <String>[];
+  }
+
+  Future<void> _save(List<String> notes) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(_storageKey, notes);
+  }
+}
+
 class FavoriteController extends Notifier<Set<String>> {
   static const _storageKey = 'favorite_medical_item_ids';
   bool _disposed = false;
