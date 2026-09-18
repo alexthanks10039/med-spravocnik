@@ -84,11 +84,6 @@ class NotesController extends Notifier<List<String>> {
     });
   }
 
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
-  }
 }
 
 class HistoryController extends Notifier<List<String>> {
