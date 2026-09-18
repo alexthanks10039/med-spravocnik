@@ -22,12 +22,18 @@ class _MedicalDetailScreenState extends ConsumerState<MedicalDetailScreen> {
   bool _historyRecorded = false;
 
   @override
+  void didUpdateWidget(covariant MedicalDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.id != widget.id) _historyRecorded = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final item = ref.watch(itemProvider(widget.id));
     final favorites = ref.watch(favoriteIdsProvider);
     return item.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, _) => Scaffold(appBar: AppBar(), body: StatePanel.error(onAction: () => ref.invalidate(itemProvider(id)))),
+      error: (_, _) => Scaffold(appBar: AppBar(), body: StatePanel.error(onAction: () => ref.invalidate(itemProvider(widget.id)))),
       data: (data) {
         if (data == null) {
           return const Scaffold(body: StatePanel.empty(title: 'Материал не найден', message: 'Возможно, он был удалён или ещё не загружен офлайн.'));
