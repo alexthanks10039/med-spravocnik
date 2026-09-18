@@ -49,20 +49,22 @@ class BookmarksScreen extends ConsumerWidget {
                             leading: const Icon(Icons.menu_book_outlined),
                           ),
                           const Divider(height: 1),
-                          ...sections.map((section) => ListTile(
-                                leading: const Icon(Icons.bookmark_rounded),
-                                title: Text(section),
-                                trailing: IconButton(
-                                  tooltip: 'Удалить закладку',
-                                  onPressed: () => ref
-                                      .read(bookmarkProvider.notifier)
-                                      .toggle(id, section),
-                                  icon: const Icon(Icons.delete_outline_rounded),
-                                ),
-                                onTap: () => context.push(
-                                  '/detail/$id?section=${Uri.encodeComponent(section)}',
-                                ),
-                              )),
+                          ...sections.map(
+                            (section) => ListTile(
+                              leading: const Icon(Icons.bookmark_rounded),
+                              title: Text(section),
+                              trailing: IconButton(
+                                tooltip: 'Удалить закладку',
+                                onPressed: () => ref
+                                    .read(bookmarkProvider.notifier)
+                                    .toggle(id, section),
+                                icon: const Icon(Icons.delete_outline_rounded),
+                              ),
+                              onTap: () => context.push(
+                                '/detail/$id?section=${Uri.encodeComponent(section)}',
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
