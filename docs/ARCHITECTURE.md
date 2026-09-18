@@ -10,7 +10,7 @@ flowchart LR
   W[Static web client] --> API
   C[Codex / RAG consumer] --> RAG[RAG endpoint]
   API --> P[Prisma Client]
-  P --> DB[(SQLite)]
+  P --> DB[(PostgreSQL)]
   RAG --> L[Three RAG spaces]
 ```
 
@@ -30,7 +30,7 @@ flowchart LR
 
 ## Данные
 
-SQLite используется как локальная база MVP. Prisma-модели:
+PostgreSQL используется как база backend MVP. Prisma-модели:
 
 - `User`: учётная запись и роль;
 - `Drug`: сведения о препарате;
@@ -43,7 +43,7 @@ SQLite используется как локальная база MVP. Prisma-�
 
 Flutter-клиент организован по feature-first структуре. Riverpod предоставляет зависимости и локальное состояние, GoRouter отвечает за маршрутизацию, SharedPreferences сохраняет пользовательские настройки.
 
-`MedicalRepository` является границей данных. Сейчас используется `OfflineMedicalRepository`; сетевой репозиторий должен реализовать тот же интерфейс и преобразовывать API DTO в domain-модели.
+`MedicalRepository` является границей данных. Flutter использует resilient repository: REST API при доступности и локальный fallback с локальными калькуляторами.
 
 ## Безопасность
 
@@ -62,4 +62,4 @@ Flutter-клиент организован по feature-first структур�
 3. Завершить CRUD, пагинацию и сортировку.
 4. Ввести версионирование медицинского контента и редакционный workflow.
 5. Покрыть формулы калькуляторов unit-тестами.
-6. Перенести production-хранилище на PostgreSQL и добавить полнотекстовый поиск.
+6. Добавить полнотекстовый поиск поверх PostgreSQL.
