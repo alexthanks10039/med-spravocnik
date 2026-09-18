@@ -15,6 +15,12 @@ class MedicalDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<MedicalItem?>>(itemProvider(id), (_, next) {
+      final value = next.valueOrNull;
+      if (value != null) {
+        ref.read(historyIdsProvider.notifier).record(value.id);
+      }
+    }, fireImmediately: true);
     final item = ref.watch(itemProvider(id));
     final favorites = ref.watch(favoriteIdsProvider);
     return item.when(
