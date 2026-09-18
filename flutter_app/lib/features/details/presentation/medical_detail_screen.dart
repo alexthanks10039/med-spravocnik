@@ -83,10 +83,14 @@ class MedicalDetailScreen extends ConsumerWidget {
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
-                                children: data.sections.keys.map((name) => Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: Chip(label: Text(name)),
-                                )).toList(),
+                                children: data.sections.keys
+                                    .map(
+                                      (name) => Padding(
+                                        padding: const EdgeInsets.only(right: 8),
+                                        child: Chip(label: Text(name)),
+                                      ),
+                                    )
+                                    .toList(),
                               ),
                             ),
                           ),
