@@ -4,6 +4,7 @@ const navButtons = document.querySelectorAll(".nav button");
 const ragResults = document.querySelector("#ragResults");
 const ragMeta = document.querySelector("#ragMeta");
 const apiStatus = document.querySelector("#apiStatus");
+let ragRequestId = 0;
 
 navButtons.forEach((button) => {
   button.onclick = () => {
@@ -72,9 +73,11 @@ async function loadRag() {
   renderEmptyState("Ищем релевантные материалы...");
 
   try {
+    const requestId = ++ragRequestId;
     const response = await fetch(`/api/rag?${params.toString()}`);
     if (!response.ok) throw new Error(`RAG request failed: ${response.status}`);
     const data = await response.json();
+    if (requestId !== ragRequestId) return;
     const items = Array.isArray(data.items) ? data.items : [];
 
     ragMeta.textContent = items.length ? `Найдено: ${items.length}` : "Совпадений нет";
