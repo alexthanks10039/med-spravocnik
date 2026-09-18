@@ -76,7 +76,6 @@ class HistoryScreen extends ConsumerWidget {
       ],
       child: historyIds.isEmpty
           ? const StatePanel.empty(
-              icon: Icons.history_toggle_off_rounded,
               title: 'История пуста',
               message: 'Открытые материалы будут появляться здесь автоматически.',
             )
