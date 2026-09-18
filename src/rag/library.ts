@@ -5,7 +5,7 @@ export const commercialSpace:RagDocument[]=[
  {id:'commercial-model',space:'commercial',title:'Коммерческая модель',summary:'Базовый справочник открыт, подписка расширяет контент, командные функции и администрирование.',tags:['pricing','subscription','b2b'],source:'internal',updatedAt:'2026-06-12'}
 ];
 export const developmentSpace:RagDocument[]=[
- {id:'dev-stack',space:'development',title:'Технический стек',summary:'Node.js, TypeScript, Express, Prisma, SQLite для локальной разработки и JWT-аутентификация.',tags:['node','typescript','prisma'],source:'repository',updatedAt:'2026-06-12'},
+ {id:'dev-stack',space:'development',title:'Технический стек',summary:'Node.js, TypeScript, Express, Prisma, PostgreSQL и JWT-аутентификация.',tags:['node','typescript','prisma'],source:'repository',updatedAt:'2026-06-12'},
  {id:'dev-api',space:'development',title:'API-контракт',summary:'REST API: /api/auth, /api/drugs, /api/diseases, /api/articles, /api/calculators и /api/rag.',tags:['api','rest','routes'],source:'repository',updatedAt:'2026-06-12'}
 ];
 export const contentSpace:RagDocument[]=[
