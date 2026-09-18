@@ -289,10 +289,15 @@ class _ItemListScreenState extends ConsumerState<ItemListScreen> {
                 children: [
                   Text('Результаты: ${visible.length}', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
-                  ...visible.asMap().entries.map((entry) => FadeSlideIn(
-                    delay: Duration(milliseconds: entry.key * 25),
-                    child: Padding(padding: const EdgeInsets.only(bottom: 10), child: MedicalItemCard(entry.value)),
-                  )),
+                  ...visible.asMap().entries.map(
+                    (entry) => FadeSlideIn(
+                      delay: Duration(milliseconds: entry.key * 25),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: MedicalItemCard(entry.value),
+                      ),
+                    ),
+                  ),
                 ],
               );
             },
