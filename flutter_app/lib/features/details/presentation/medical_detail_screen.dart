@@ -8,20 +8,22 @@ import '../../../core/data/providers.dart';
 import '../../../core/models/medical_content.dart';
 import '../../../shared/widgets/clinical_widgets.dart';
 
-class MedicalDetailScreen extends ConsumerWidget {
+class MedicalDetailScreen extends ConsumerStatefulWidget {
   const MedicalDetailScreen({super.key, required this.id, this.section});
   final String id;
   final String? section;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<AsyncValue<MedicalItem?>>(itemProvider(id), (_, next) {
-      final value = next.valueOrNull;
-      if (value != null) {
-        ref.read(historyIdsProvider.notifier).record(value.id);
-      }
-    }, fireImmediately: true);
-    final item = ref.watch(itemProvider(id));
+  ConsumerState<MedicalDetailScreen> createState() =>
+      _MedicalDetailScreenState();
+}
+
+class _MedicalDetailScreenState extends ConsumerState<MedicalDetailScreen> {
+  bool _historyRecorded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = ref.watch(itemProvider(widget.id));
     final favorites = ref.watch(favoriteIdsProvider);
     return item.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -29,6 +31,14 @@ class MedicalDetailScreen extends ConsumerWidget {
       data: (data) {
         if (data == null) {
           return const Scaffold(body: StatePanel.empty(title: 'Материал не найден', message: 'Возможно, он был удалён или ещё не загружен офлайн.'));
+        }
+        if (!_historyRecorded) {
+          _historyRecorded = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(historyIdsProvider.notifier).record(data.id);
+            }
+          });
         }
         final isDrug = data.type == ContentType.drug;
         final pageTitle = switch (data.type) {
