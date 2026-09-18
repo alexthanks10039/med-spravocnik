@@ -191,10 +191,13 @@ class ResilientMedicalRepository implements MedicalRepository {
 
   @override
   Future<List<MedicalItem>> search(String q) async {
-    final remoteItems = await _run(
-      () => remote.search(q),
-      () => <MedicalItem>[],
-    );
+    List<MedicalItem> remoteItems;
+    try {
+      remoteItems = await remote.search(q);
+    } catch (_) {
+      return offline.search(q);
+    }
+
     final localCalculators = await offline.search(q).then(
       (items) => items.where((item) => item.type == ContentType.calculator),
     );
