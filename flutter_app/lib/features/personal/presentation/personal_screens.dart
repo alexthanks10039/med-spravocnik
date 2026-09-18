@@ -58,27 +58,58 @@ class SavedScreen extends ConsumerWidget {
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ScreenFrame(title: 'История', actions: [TextButton(onPressed: () {}, child: const Text('Очистить'))], child: ref.watch(recentItemsProvider).when(
-    loading: () => const LinearProgressIndicator(), error: (_, _) => const StatePanel.error(),
-    data: (items) => Column(
-      children: items.asMap().entries.map(
-        (entry) => Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: MedicalItemCard(
-            entry.value,
-            trailing: Text(
-              entry.key < 2 ? 'Сегодня' : 'Вчера',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 12,
-              ),
-            ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyIds = ref.watch(historyIdsProvider);
+    final historyItems = ref.watch(historyItemsProvider);
+
+    return ScreenFrame(
+      title: 'История',
+      actions: [
+        if (historyIds.isNotEmpty)
+          TextButton(
+            onPressed: () =>
+                ref.read(historyIdsProvider.notifier).clear(),
+            child: const Text('Очистить'),
           ),
-        ),
-      ).toList(),
-    ),
-  ));
+      ],
+      child: historyIds.isEmpty
+          ? const StatePanel.empty(
+              icon: Icons.history_toggle_off_rounded,
+              title: 'История пуста',
+              message: 'Открытые материалы будут появляться здесь автоматически.',
+            )
+          : historyItems.when(
+              loading: () => const LinearProgressIndicator(),
+              error: (_, _) => StatePanel.error(
+                onAction: () => ref.invalidate(historyItemsProvider),
+              ),
+              data: (items) => items.isEmpty
+                  ? const StatePanel.empty(
+                      title: 'Материалы недоступны',
+                      message: 'Не удалось восстановить открытые материалы из локальной истории.',
+                    )
+                  : Column(
+                      children: items.asMap().entries.map(
+                        (entry) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: MedicalItemCard(
+                            entry.value,
+                            trailing: Text(
+                              entry.key == 0 ? 'Последнее' : 'Ранее',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ).toList(growable: false),
+                    ),
+            ),
+    );
+  }
 }
 
 class NotesScreen extends ConsumerStatefulWidget { const NotesScreen({super.key}); @override ConsumerState<NotesScreen> createState() => _NotesScreenState(); }
