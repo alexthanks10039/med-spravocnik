@@ -209,6 +209,8 @@ class ResilientMedicalRepository implements MedicalRepository {
 
   @override
   Future<List<MedicalItem>> search(String q) async {
+    if (q.trim().isEmpty) return offline.search(q);
+
     List<MedicalItem> remoteItems;
     try {
       remoteItems = await remote.search(q);
