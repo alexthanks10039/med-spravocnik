@@ -71,6 +71,9 @@ jobs:
       - name: Apply database migrations
         run: pnpm db:deploy
 
+      - name: Seed test database
+        run: pnpm db:seed
+
       - name: Type-check
         run: pnpm check
 
