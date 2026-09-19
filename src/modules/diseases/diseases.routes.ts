@@ -13,11 +13,12 @@ const schema = z.object({
   treatment: z.string().optional(),
 });
 
+const querySchema = z.string().trim().max(200).default('');
 const limitSchema = z.coerce.number().int().min(1).max(100).default(50);
 
 diseasesRouter.get('/', async (req, res, next) => {
   try {
-    const q = String(req.query.q ?? '').trim();
+    const q = querySchema.parse(req.query.q);
     const limit = limitSchema.parse(req.query.limit);
     res.json(await prisma.disease.findMany({
       where: q
