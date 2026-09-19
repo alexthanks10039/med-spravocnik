@@ -18,7 +18,8 @@
 - Material 3;
 - Riverpod для зависимостей и состояния;
 - GoRouter для маршрутизации;
-- SharedPreferences для локальных пользовательских настроек.
+- SharedPreferences для локальных пользовательских настроек;
+- `package:http` для REST API с offline fallback.
 
 ## Запуск
 
@@ -49,11 +50,11 @@ lib/
 └── shared/widgets/      переиспользуемые UI-компоненты
 ```
 
-Основная абстракция данных — `MedicalRepository`. `OfflineMedicalRepository` содержит демонстрационные записи и имитирует задержку поиска. Production-реализация должна подключать REST API, локальную БД и фоновую синхронизацию, не меняя presentation-слой.
+Основная абстракция данных — `MedicalRepository`. Клиент использует REST API через `ApiMedicalRepository` и автоматически переключается на `OfflineMedicalRepository` при ошибках сети. Локальное хранилище используется для пользовательских данных и настроек.
 
 ## Маршруты
 
-`/`, `/search`, `/catalog`, `/diseases`, `/drugs`, `/calculators`, `/articles`, `/saved`, `/history`, `/notes`, `/profile`, `/settings`, `/detail/:id`.
+`/`, `/search`, `/catalog`, `/diseases`, `/drugs`, `/calculators`, `/calculators/category/:categoryId`, `/articles`, `/saved`, `/bookmarks`, `/history`, `/notes`, `/profile`, `/settings`, `/detail/:id`.
 
 ## Документация интерфейса
 
@@ -61,7 +62,7 @@ lib/
 
 ## Ограничения MVP
 
-- клиент пока использует локальные данные и не вызывает backend;
+- backend-зависимый контент требует доступного API; при сетевой ошибке используется offline fallback;
 - сохранённые материалы и заметки рассчитаны на локальный сценарий;
-- медицинские тексты являются демонстрационными;
+- медицинские тексты в текущем репозитории являются демонстрационными;
 - перед релизом нужны источники, дата пересмотра, evidence grading и профессиональная редактура.
