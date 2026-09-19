@@ -7,7 +7,6 @@ abstract interface class MedicalRepository {
   Future<List<MedicalItem>> byType(ContentType type);
   Future<MedicalItem?> getById(String id);
   Future<List<MedicalItem>> getByIds(Iterable<String> ids);
-  Future<List<MedicalItem>> recent();
 }
 
 class OfflineMedicalRepository implements MedicalRepository {
@@ -203,7 +202,4 @@ class OfflineMedicalRepository implements MedicalRepository {
         .where((item) => wanted.contains(item.id))
         .toList(growable: false);
   }
-
-  @override
-  Future<List<MedicalItem>> recent() async => _items.take(4).toList();
 }
