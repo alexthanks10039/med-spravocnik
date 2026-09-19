@@ -170,12 +170,17 @@ class OfflineMedicalRepository implements MedicalRepository {
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) return _items;
     return _items
-        .where(
-          (item) => '${item.title} ${item.subtitle} ${item.category}'
-              .toLowerCase()
-              .contains(normalized),
-        )
-        .toList();
+        .where((item) {
+          final searchable = <String>[
+            item.title,
+            item.subtitle,
+            item.category,
+            ...item.sections.keys,
+            ...item.sections.values,
+          ].join(' ').toLowerCase();
+          return searchable.contains(normalized);
+        })
+        .toList(growable: false);
   }
 
   @override
