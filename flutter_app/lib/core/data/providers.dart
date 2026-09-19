@@ -19,15 +19,15 @@ class SearchQueryController extends Notifier<String> {
   void update(String value) => state = value;
 }
 
-final searchResultsProvider = FutureProvider<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).search(ref.watch(searchQueryProvider)));
+final searchResultsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).search(ref.watch(searchQueryProvider)));
 final referenceSearchProvider = FutureProvider.autoDispose.family<List<MedicalItem>, String>((ref, query) => ref.watch(medicalRepositoryProvider).search(query));
-final recentItemsProvider = FutureProvider<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).recent());
-final itemsByTypeProvider = FutureProvider.family<List<MedicalItem>, ContentType>((ref, type) => ref.watch(medicalRepositoryProvider).byType(type));
-final itemProvider = FutureProvider.family<MedicalItem?, String>((ref, id) => ref.watch(medicalRepositoryProvider).getById(id));
+final recentItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).recent());
+final itemsByTypeProvider = FutureProvider.autoDispose.family<List<MedicalItem>, ContentType>((ref, type) => ref.watch(medicalRepositoryProvider).byType(type));
+final itemProvider = FutureProvider.autoDispose.family<MedicalItem?, String>((ref, id) => ref.watch(medicalRepositoryProvider).getById(id));
 
 final favoriteIdsProvider = NotifierProvider<FavoriteController, Set<String>>(FavoriteController.new);
 
-final favoriteItemsProvider = FutureProvider<List<MedicalItem>>((ref) async {
+final favoriteItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) async {
   final ids = ref.watch(favoriteIdsProvider);
   final repository = ref.watch(medicalRepositoryProvider);
   final items = await Future.wait(ids.map(repository.getById));
@@ -39,7 +39,7 @@ final notesProvider = NotifierProvider<NotesController, List<String>>(NotesContr
 final historyIdsProvider =
     NotifierProvider<HistoryController, List<String>>(HistoryController.new);
 
-final historyItemsProvider = FutureProvider<List<MedicalItem>>((ref) async {
+final historyItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) async {
   final ids = ref.watch(historyIdsProvider);
   final repository = ref.watch(medicalRepositoryProvider);
   final items = await Future.wait(ids.map(repository.getById));
