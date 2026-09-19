@@ -36,6 +36,7 @@ jobs:
 
       - name: Sync resolved lockfile
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: .
         run: |
           if ! git diff --quiet -- flutter_app/pubspec.lock; then
             git config user.name "github-actions[bot]"
