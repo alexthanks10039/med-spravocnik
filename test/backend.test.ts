@@ -29,6 +29,16 @@ test('GET /api/health returns an operational status', async () => {
   });
 });
 
+test('invalid JSON body returns HTTP 400', async () => {
+  const response = await fetch(baseUrl + '/api/calculators/bmi', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{"weightKg":70,',
+  });
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { message: 'Invalid JSON body' });
+});
+
 test('GET /api/ready verifies database readiness', async () => {
   const response = await fetch(baseUrl + '/api/ready');
   assert.equal(response.status, 200);
