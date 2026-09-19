@@ -11,9 +11,8 @@ on:
       - '.github/workflows/ios-ci.yml'
 
 jobs:
-    timeout-minutes: 30
-
   ios:
+    timeout-minutes: 30
     runs-on: macos-latest
     defaults:
       run:
