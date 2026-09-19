@@ -143,7 +143,22 @@ class MedicalItemCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap ?? () => context.push('/detail/${item.id}'),
+        onTap: onTap ??
+            () {
+              if (item.type == ContentType.calculator) {
+                final category = switch (item.id) {
+                  'bmi' => 'general-practice',
+                  'egfr' || 'egfr-ckd-epi-2021' => 'nephrology',
+                  'cv-risk' => 'cardiology',
+                  _ => null,
+                };
+                if (category != null) {
+                  context.push('/calculators/category/$category');
+                  return;
+                }
+              }
+              context.push('/detail/\${item.id}');
+            },
         child: Padding(
           padding: const EdgeInsets.all(UiTokens.cardPadding),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
