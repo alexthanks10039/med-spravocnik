@@ -27,6 +27,13 @@ final itemProvider = FutureProvider.family<MedicalItem?, String>((ref, id) => re
 
 final favoriteIdsProvider = NotifierProvider<FavoriteController, Set<String>>(FavoriteController.new);
 
+final favoriteItemsProvider = FutureProvider<List<MedicalItem>>((ref) async {
+  final ids = ref.watch(favoriteIdsProvider);
+  final repository = ref.watch(medicalRepositoryProvider);
+  final items = await Future.wait(ids.map(repository.getById));
+  return items.whereType<MedicalItem>().toList(growable: false);
+});
+
 final notesProvider = NotifierProvider<NotesController, List<String>>(NotesController.new);
 
 final historyIdsProvider =
