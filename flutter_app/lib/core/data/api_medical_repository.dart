@@ -256,11 +256,28 @@ class ResilientMedicalRepository implements MedicalRepository {
 
   @override
   Future<MedicalItem?> getById(String id) async {
+    final items = await getByIds([id]);
+    return items.isEmpty ? null : items.first;
+  }
+
+  @override
+  Future<List<MedicalItem>> getByIds(Iterable<String> ids) async {
+    final normalizedIds = ids
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    if (normalizedIds.isEmpty) return const [];
+
     try {
-      final remoteItem = await remote.getById(id);
-      return remoteItem ?? await offline.getById(id);
+      final remoteItems = await remote.getByIds(normalizedIds);
+      final remoteIds = remoteItems.map((item) => item.id).toSet();
+      final missingIds = normalizedIds.where((id) => !remoteIds.contains(id));
+      if (missingIds.isEmpty) return remoteItems;
+
+      final localItems = await offline.getByIds(missingIds);
+      return [...remoteItems, ...localItems];
     } catch (_) {
-      return offline.getById(id);
+      return offline.getByIds(normalizedIds);
     }
   }
 
