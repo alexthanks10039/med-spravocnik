@@ -1,5 +1,8 @@
 name: Flutter CI
 
+permissions:
+  contents: write
+
 on:
   push:
     paths:
@@ -31,12 +34,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Upload resolved lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-pubspec-lock
-          path: flutter_app/pubspec.lock
-          retention-days: 1
+      - name: Sync resolved lockfile
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          if ! git diff --quiet -- flutter_app/pubspec.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add flutter_app/pubspec.lock
+            git commit -m "chore: sync flutter lockfile"
+            git push
+          fi
 
       - name: Analyze
         run: flutter analyze
