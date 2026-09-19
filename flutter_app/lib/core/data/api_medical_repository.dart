@@ -6,6 +6,13 @@ import 'package:http/http.dart' as http;
 import '../models/medical_content.dart';
 import 'medical_repository.dart';
 
+class _ApiHttpException implements Exception {
+  const _ApiHttpException(this.statusCode, this.uri);
+
+  final int statusCode;
+  final Uri uri;
+}
+
 class ApiMedicalRepository implements MedicalRepository {
   ApiMedicalRepository({String? baseUrl, http.Client? client})
       : baseUrl = (baseUrl ?? const String.fromEnvironment('MED_API_URL'))
@@ -15,6 +22,8 @@ class ApiMedicalRepository implements MedicalRepository {
 
   final String baseUrl;
   final http.Client _client;
+
+  void close() => _client.close();
 
   Future<Object?> _get(String path, [Map<String, String>? query]) async {
     if (baseUrl.isEmpty) {
@@ -27,7 +36,7 @@ class ApiMedicalRepository implements MedicalRepository {
         .timeout(const Duration(seconds: 8));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw http.ClientException('HTTP ${response.statusCode}', uri);
+      throw _ApiHttpException(response.statusCode, uri);
     }
 
     return jsonDecode(response.body);
@@ -85,8 +94,8 @@ class ApiMedicalRepository implements MedicalRepository {
       try {
         final data = await _get('${_path(type)}/$id');
         if (data is Map<String, dynamic>) return _map(type, data);
-      } on http.ClientException {
-        // Try the next content type.
+      } on _ApiHttpException catch (error) {
+        if (error.statusCode != 404) rethrow;
       }
     }
     return null;
