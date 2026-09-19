@@ -1,10 +1,6 @@
 name: iOS CI
 
 on:
-concurrency:
-  group: ios-ci-${{ github.ref }}
-  cancel-in-progress: true
-
   push:
     paths:
       - 'flutter_app/**'
@@ -13,6 +9,10 @@ concurrency:
     paths:
       - 'flutter_app/**'
       - '.github/workflows/ios-ci.yml'
+
+concurrency:
+  group: ios-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ios:
