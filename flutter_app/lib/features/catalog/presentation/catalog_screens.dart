@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +18,7 @@ class CatalogScreen extends ConsumerStatefulWidget {
 
 class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   final search = TextEditingController();
+  Timer? debounce;
   String query = '';
 
   static const entries = [
@@ -27,6 +30,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
 
   @override
   void dispose() {
+    debounce?.cancel();
     search.dispose();
     super.dispose();
   }
@@ -34,7 +38,10 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final results = ref.watch(referenceSearchProvider(query));
+    final normalizedQuery = query.trim();
+    final AsyncValue<List<MedicalItem>>? results = normalizedQuery.isEmpty
+        ? null
+        : ref.watch(referenceSearchProvider(normalizedQuery));
     final width = MediaQuery.sizeOf(context).width;
     final columns = width >= 1050 ? 2 : 1;
 
@@ -69,7 +76,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     controller: search,
                     query: query,
                     hintText: 'Поиск по справочнику',
-                    onChanged: (value) => setState(() => query = value),
+                    onChanged: _scheduleSearch,
                     shortcuts: const [
                       SearchShortcut('Заболевания', icon: Icons.medical_information_outlined),
                       SearchShortcut('Препараты', icon: Icons.medication_outlined),
@@ -86,7 +93,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
             ),
           ),
           const SizedBox(height: UiTokens.pageGap),
-          if (query.trim().isEmpty) ...[
+          if (normalizedQuery.isEmpty) ...[
             Text('Разделы', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
             GridView.builder(
@@ -111,7 +118,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               ),
             ),
           ] else
-            results.when(
+            results!.when(
               loading: () => const Center(child: Padding(padding: EdgeInsets.all(36), child: CircularProgressIndicator())),
               error: (_, _) => StatePanel.error(onAction: () => ref.invalidate(referenceSearchProvider(query))),
               data: (items) {
@@ -144,6 +151,14 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ],
       ),
     );
+  }
+
+  void _scheduleSearch(String value) {
+    debounce?.cancel();
+    debounce = Timer(const Duration(milliseconds: 280), () {
+      if (!mounted) return;
+      setState(() => query = value.trim());
+    });
   }
 }
 
@@ -245,6 +260,7 @@ class ItemListScreen extends ConsumerStatefulWidget {
 
 class _ItemListScreenState extends ConsumerState<ItemListScreen> {
   final search = TextEditingController();
+  Timer? debounce;
   String query = '';
 
   List<SearchShortcut> get shortcuts => switch (widget.type) {
@@ -255,7 +271,7 @@ class _ItemListScreenState extends ConsumerState<ItemListScreen> {
   };
 
   @override
-  void dispose() { search.dispose(); super.dispose(); }
+  void dispose() { debounce?.cancel(); search.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +286,7 @@ class _ItemListScreenState extends ConsumerState<ItemListScreen> {
             query: query,
             hintText: widget.type == ContentType.disease ? 'Поиск по заболеваниям' : widget.type == ContentType.drug ? 'Поиск по препаратам' : 'Поиск по рекомендациям',
             shortcuts: shortcuts,
-            onChanged: (value) => setState(() => query = value),
+            onChanged: _scheduleSearch,
           ),
           const SizedBox(height: 20),
           items.when(
@@ -306,4 +322,12 @@ class _ItemListScreenState extends ConsumerState<ItemListScreen> {
       ),
     );
   }
+  void _scheduleSearch(String value) {
+    debounce?.cancel();
+    debounce = Timer(const Duration(milliseconds: 280), () {
+      if (!mounted) return;
+      setState(() => query = value.trim());
+    });
+  }
+
 }
