@@ -2,6 +2,9 @@
   "name": "med-spravochnik",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22 <25"
+  },
   "type": "module",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
