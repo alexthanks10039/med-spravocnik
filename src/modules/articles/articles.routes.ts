@@ -14,11 +14,12 @@ const schema = z.object({
   tags: z.array(z.string()).default([]),
   isPublished: z.boolean().default(true),
 });
+const querySchema = z.string().trim().max(200).default('');
 const limitSchema = z.coerce.number().int().min(1).max(100).default(50);
 
 articlesRouter.get('/', async (req, res, next) => {
   try {
-    const q = String(req.query.q ?? '').trim();
+    const q = querySchema.parse(req.query.q);
     const limit = limitSchema.parse(req.query.limit);
     res.json(await prisma.article.findMany({
       where: {
