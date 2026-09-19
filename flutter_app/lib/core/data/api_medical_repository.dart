@@ -86,20 +86,45 @@ class ApiMedicalRepository implements MedicalRepository {
 
   @override
   Future<MedicalItem?> getById(String id) async {
-    for (final type in const [
-      ContentType.disease,
-      ContentType.drug,
-      ContentType.article,
-    ]) {
-      try {
-        final data = await _get('${_path(type)}/$id');
-        if (data is Map<String, dynamic>) return _map(type, data);
-      } on _ApiHttpException catch (error) {
-        if (error.statusCode != 404) rethrow;
-      }
-    }
-    return null;
+    final items = await getByIds([id]);
+    return items.isEmpty ? null : items.first;
   }
+
+  @override
+  Future<List<MedicalItem>> getByIds(Iterable<String> ids) async {
+    final normalizedIds = ids
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (normalizedIds.isEmpty) return const [];
+
+    final data = await _get(
+      '/content',
+      {'ids': normalizedIds.join(',')},
+    );
+
+    if (data is! List<Object?>) {
+      throw const FormatException('Invalid content batch response');
+    }
+
+    final result = <MedicalItem>[];
+    for (final item in data.whereType<Map<String, dynamic>>()) {
+      final typeName = _s(item['type']);
+      final rawType = switch (typeName) {
+        'disease' => ContentType.disease,
+        'drug' => ContentType.drug,
+        'article' => ContentType.article,
+        _ => null,
+      };
+      if (rawType == null) continue;
+
+      final payload = Map<String, dynamic>.from(item)..remove('type');
+      result.add(_map(rawType, payload));
+    }
+    return result;
+  }
+
 
   @override
   Future<List<MedicalItem>> recent() async {
