@@ -10,6 +10,7 @@ class ThemeController extends Notifier<ThemeMode> {
   static const _key = 'theme_mode';
   bool _disposed = false;
   int _revision = 0;
+  Future<void> _saveQueue = Future<void>.value();
 
   @override
   ThemeMode build() {
@@ -33,8 +34,11 @@ class ThemeController extends Notifier<ThemeMode> {
   Future<void> setMode(ThemeMode mode) async {
     _revision++;
     state = mode;
-    final preferences = await SharedPreferences.getInstance();
-    if (_disposed) return;
-    await preferences.setString(_key, mode.name);
+    final snapshot = mode.name;
+    _saveQueue = _saveQueue.then((_) async {
+      if (_disposed) return;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(_key, snapshot);
+    });
   }
 }
