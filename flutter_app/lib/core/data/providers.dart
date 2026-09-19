@@ -41,9 +41,15 @@ final historyIdsProvider =
 
 final historyItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) async {
   final ids = ref.watch(historyIdsProvider);
+  if (ids.isEmpty) return const [];
+
   final repository = ref.watch(medicalRepositoryProvider);
-  final items = await Future.wait(ids.map(repository.getById));
-  return items.whereType<MedicalItem>().toList(growable: false);
+  final found = await repository.getByIds(ids);
+  final byId = {for (final item in found) item.id: item};
+  return ids
+      .map((id) => byId[id])
+      .whereType<MedicalItem>()
+      .toList(growable: false);
 });
 
 class NotesController extends Notifier<List<String>> {
