@@ -48,7 +48,10 @@ diseasesRouter.get('/', async (req, res, next) => {
 
 diseasesRouter.get('/:id', async (req, res, next) => {
   try {
-    const item = await prisma.disease.findUnique({ where: { id: req.params.id } });
+    const item = await prisma.disease.findUnique({
+      select: { id: true, name: true, icd10: true, symptoms: true, diagnostics: true, treatment: true },
+      where: { id: req.params.id },
+    });
     if (!item) throw new AppError('Disease not found', 404);
     res.json(item);
   } catch (error) {
