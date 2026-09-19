@@ -129,9 +129,27 @@ class _MedicalDetailScreenState extends ConsumerState<MedicalDetailScreen> {
                           SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => context.push('/notes?source=${data.id}'), icon: const Icon(Icons.note_add_outlined), label: const Text('Добавить заметку'))),
                           if (data.relatedIds.isNotEmpty) ...[
                             const SizedBox(height: 28),
-                            Text('Связанные материалы', style: Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              'Связанные материалы',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                             const SizedBox(height: 12),
-                            ...data.relatedIds.map((relatedId) => _RelatedItem(id: relatedId)),
+                            ref
+                                .watch(relatedItemsProvider(data.relatedIds.join(',')))
+                                .when(
+                                  loading: () => const LinearProgressIndicator(),
+                                  error: (_, _) => const SizedBox.shrink(),
+                                  data: (items) => Column(
+                                    children: items
+                                        .map(
+                                          (item) => Padding(
+                                            padding: const EdgeInsets.only(bottom: 10),
+                                            child: MedicalItemCard(item),
+                                          ),
+                                        )
+                                        .toList(growable: false),
+                                  ),
+                                ),
                           ],
                           const SizedBox(height: 24),
                           Text('Информация предназначена для медицинских специалистов и не заменяет клиническое решение.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
@@ -225,13 +243,3 @@ class _ClinicalAlert extends StatelessWidget {
   }
 }
 
-class _RelatedItem extends ConsumerWidget {
-  const _RelatedItem({required this.id});
-  final String id;
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => ref.watch(itemProvider(id)).when(
-    loading: () => const LinearProgressIndicator(),
-    error: (_, _) => const SizedBox.shrink(),
-    data: (item) => item == null ? const SizedBox.shrink() : Padding(padding: const EdgeInsets.only(bottom: 10), child: MedicalItemCard(item)),
-  );
-}
