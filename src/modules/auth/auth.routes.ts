@@ -1,12 +1,13 @@
+import { Prisma } from '@prisma/client';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
-import { prisma } from '../../shared/prisma.js';
 import { env } from '../../config/env.js';
-import { AppError } from '../../shared/middleware/error.middleware.js';
+import { prisma } from '../../shared/prisma.js';
 import { authMiddleware } from '../../shared/middleware/auth.middleware.js';
+import { AppError } from '../../shared/middleware/error.middleware.js';
 
 export const authRouter = Router();
 
@@ -15,16 +16,20 @@ const schema = z.object({
   password: z.string().min(6).max(128),
 });
 
+const parseCredentials = (body: unknown) => {
+  const credentials = schema.parse(body);
+  if (bcrypt.truncates(credentials.password)) {
+    throw new AppError('Password is too long for the selected password hashing format', 400);
+  }
+  return credentials;
+};
+
 const token = (id: string, role: 'USER' | 'ADMIN') =>
   jwt.sign({ userId: id, role }, env.JWT_SECRET, { expiresIn: '30d' });
 
 authRouter.post('/register', async (req, res, next) => {
   try {
-    const d = schema.parse(req.body);
-    if (await prisma.user.findUnique({ where: { email: d.email } })) {
-      throw new AppError('User already exists', 409);
-    }
-
+    const d = parseCredentials(req.body);
     const user = await prisma.user.create({
       data: {
         email: d.email,
@@ -35,13 +40,20 @@ authRouter.post('/register', async (req, res, next) => {
 
     res.status(201).json({ user, token: token(user.id, user.role) });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      next(new AppError('User already exists', 409));
+      return;
+    }
     next(error);
   }
 });
 
 authRouter.post('/login', async (req, res, next) => {
   try {
-    const d = schema.parse(req.body);
+    const d = parseCredentials(req.body);
     const user = await prisma.user.findUnique({ where: { email: d.email } });
 
     if (!user || !(await bcrypt.compare(d.password, user.password))) {
