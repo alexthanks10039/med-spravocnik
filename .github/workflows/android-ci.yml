@@ -11,9 +11,8 @@ on:
       - '.github/workflows/android-ci.yml'
 
 jobs:
-    timeout-minutes: 20
-
   android:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     defaults:
       run:
