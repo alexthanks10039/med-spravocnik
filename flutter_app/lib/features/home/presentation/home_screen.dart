@@ -19,7 +19,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recent = ref.watch(recentItemsProvider);
+    final recent = ref.watch(historyItemsProvider);
     final colors = Theme.of(context).colorScheme;
     final width = MediaQuery.sizeOf(context).width;
     final columns = width >= 1050 ? 4 : width >= 650 ? 2 : 1;
