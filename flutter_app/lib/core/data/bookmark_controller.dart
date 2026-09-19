@@ -41,11 +41,20 @@ class BookmarkController extends Notifier<Map<String, Set<String>>> {
     final raw = preferences.getString(_storageKey);
     if (_disposed || revision != _revision || raw == null) return;
     try {
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      state = {
-        for (final entry in decoded.entries)
-          entry.key: (entry.value as List<dynamic>).cast<String>().toSet(),
-      };
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, Object?>) return;
+
+      final parsed = <String, Set<String>>{};
+      for (final entry in decoded.entries) {
+        final values = entry.value;
+        if (values is List<Object?>) {
+          final sections = values.whereType<String>().toSet();
+          if (sections.isNotEmpty) {
+            parsed[entry.key] = sections;
+          }
+        }
+      }
+      state = parsed;
     } catch (_) {
       // Ignore corrupt local bookmark data and keep the empty state.
     }
