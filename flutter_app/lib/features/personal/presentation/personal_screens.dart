@@ -13,7 +13,7 @@ class SavedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ids = ref.watch(favoriteIdsProvider);
-    final allItems = ref.watch(searchResultsProvider);
+    final allItems = ref.watch(favoriteItemsProvider);
     return ScreenFrame(title: 'Сохранённое', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: _Shortcut(icon: Icons.history_rounded, title: 'История', semanticLabel: 'Открыть историю просмотров', onTap: () => context.go('/history'))),
@@ -29,7 +29,7 @@ class SavedScreen extends ConsumerWidget {
         loading: () => const LinearProgressIndicator(),
         error: (_, _) => const StatePanel.error(),
         data: (items) {
-          final saved = items.where((item) => ids.contains(item.id)).toList();
+          final saved = items.where((item) => ids.contains(item.id)).toList(growable: false);
           if (saved.isEmpty) return const StatePanel.empty(title: 'Избранное пусто', message: 'Сохраняйте материалы, чтобы они были доступны здесь и офлайн.');
           return Column(
             children: saved
