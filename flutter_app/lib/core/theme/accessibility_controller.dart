@@ -9,6 +9,7 @@ class AccessibilityController extends Notifier<bool> {
   static const _key = 'accessibility_mode';
   bool _disposed = false;
   int _revision = 0;
+  Future<void> _saveQueue = Future<void>.value();
 
   @override
   bool build() {
@@ -27,8 +28,11 @@ class AccessibilityController extends Notifier<bool> {
   Future<void> setEnabled(bool enabled) async {
     _revision++;
     state = enabled;
-    final preferences = await SharedPreferences.getInstance();
-    if (_disposed) return;
-    await preferences.setBool(_key, enabled);
+    final snapshot = enabled;
+    _saveQueue = _saveQueue.then((_) async {
+      if (_disposed) return;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setBool(_key, snapshot);
+    });
   }
 }
