@@ -1,6 +1,10 @@
 name: Android CI
 
 on:
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
   push:
     paths:
       - 'flutter_app/**'
