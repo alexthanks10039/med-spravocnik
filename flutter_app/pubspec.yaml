@@ -1,5 +1,5 @@
 name: doctor_reference
-description: "A new Flutter project."
+description: "Clinical reference app for fast access to diseases, medicines, guidance and calculators."
 publish_to: 'none'
 version: 1.0.0+1
 
