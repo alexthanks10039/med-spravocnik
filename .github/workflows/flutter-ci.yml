@@ -11,9 +11,8 @@ on:
       - '.github/workflows/flutter-ci.yml'
 
 jobs:
-    timeout-minutes: 20
-
   flutter:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     defaults:
       run:
