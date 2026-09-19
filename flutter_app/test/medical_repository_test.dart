@@ -1,0 +1,37 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:doctor_reference/core/data/medical_repository.dart';
+import 'package:doctor_reference/core/models/medical_content.dart';
+
+void main() {
+  const repository = OfflineMedicalRepository();
+
+  test('offline search includes section content', () async {
+    final results = await repository.search('красные флаги');
+
+    expect(
+      results.map((item) => item.id),
+      contains('hypertension'),
+    );
+  });
+
+  test('batch lookup preserves requested order and ignores unknown ids', () async {
+    final results = await repository.getByIds(
+      const ['amoxicillin', 'hypertension', 'missing'],
+    );
+
+    expect(
+      results.map((item) => item.id).toList(),
+      ['amoxicillin', 'hypertension'],
+    );
+  });
+
+  test('batch lookup supports local calculator records', () async {
+    final results = await repository.getByIds(const ['bmi', 'egfr']);
+
+    expect(
+      results.map((item) => item.type),
+      [ContentType.calculator, ContentType.calculator],
+    );
+  });
+}
