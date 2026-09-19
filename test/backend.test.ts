@@ -59,6 +59,37 @@ test('GET /api/rag filters the library by space and query', async () => {
   assert.equal(body.items[0].id, 'dev-stack');
 });
 
+test('GET /api/diseases returns lightweight catalog fields', async () => {
+  const response = await fetch(baseUrl + '/api/diseases?limit=2');
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.length, 2);
+  assert.ok(body[0].id);
+  assert.ok(body[0].name);
+  assert.ok('icd10' in body[0]);
+  assert.equal('treatment' in body[0], false);
+});
+
+test('GET /api/drugs returns lightweight catalog fields', async () => {
+  const response = await fetch(baseUrl + '/api/drugs?limit=2');
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.length, 2);
+  assert.ok(body[0].id);
+  assert.ok(body[0].name);
+  assert.equal('dosage' in body[0], false);
+});
+
+test('GET /api/articles returns lightweight catalog fields', async () => {
+  const response = await fetch(baseUrl + '/api/articles?limit=2');
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.length, 2);
+  assert.ok(body[0].id);
+  assert.ok(body[0].title);
+  assert.equal('content' in body[0], false);
+});
+
 test('POST /api/calculators/bmi calculates BMI', async () => {
   const response = await fetch(`${baseUrl}/api/calculators/bmi`, {
     method: 'POST',
