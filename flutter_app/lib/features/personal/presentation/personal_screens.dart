@@ -111,50 +111,118 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
-class NotesScreen extends ConsumerStatefulWidget { const NotesScreen({super.key}); @override ConsumerState<NotesScreen> createState() => _NotesScreenState(); }
+class NotesScreen extends ConsumerStatefulWidget {
+  const NotesScreen({super.key});
+
+  @override
+  ConsumerState<NotesScreen> createState() => _NotesScreenState();
+}
+
 class _NotesScreenState extends ConsumerState<NotesScreen> {
   final controller = TextEditingController();
-  @override void dispose() { controller.dispose(); super.dispose(); }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   void _save() {
     final value = controller.text.trim();
     if (value.isEmpty) return;
+
     ref.read(notesProvider.notifier).add(value);
     controller.clear();
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Заметка сохранена на устройстве')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Заметка сохранена на устройстве')),
+    );
   }
-  @override Widget build(BuildContext context) {
+
+  @override
+  Widget build(BuildContext context) {
     final notes = ref.watch(notesProvider);
-    return ScreenFrame(title: 'Заметки', child: Column(children: [
-      Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
-        TextField(controller: controller, maxLines: 4, textInputAction: TextInputAction.newline, decoration: const InputDecoration(hintText: 'Новая клиническая заметка...', prefixIcon: Icon(Icons.edit_note_rounded))),
-        const SizedBox(height: 12),
-        Align(alignment: Alignment.centerRight, child: FilledButton.icon(onPressed: _save, icon: const Icon(Icons.add_rounded), label: const Text('Сохранить'))),
-      ]))),
-      const SizedBox(height: 16),
-      if (notes.isEmpty) const StatePanel.empty(title: 'Заметок пока нет', message: 'Добавьте личную заметку к материалу или создайте её здесь.'),
-      ...notes.asMap().entries.map(
-        (entry) => Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-              leading: const Icon(Icons.sticky_note_2_outlined),
-              title: Text(entry.value),
-              subtitle: const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text('Сохранено на устройстве'),
+    final sourceId = GoRouterState.of(context).uri.queryParameters['source'];
+    final source = sourceId == null ? null : ref.watch(itemProvider(sourceId));
+
+    return ScreenFrame(
+      title: 'Заметки',
+      child: Column(
+        children: [
+          if (source != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: source.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (item) => item == null
+                    ? const SizedBox.shrink()
+                    : Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.link_rounded),
+                          title: const Text('Заметка к материалу'),
+                          subtitle: Text(item.title),
+                        ),
+                      ),
               ),
-              trailing: IconButton(
-                tooltip: 'Удалить заметку',
-                icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () => ref.read(notesProvider.notifier).removeAt(entry.key),
+            ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: controller,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.newline,
+                    decoration: const InputDecoration(
+                      hintText: 'Новая клиническая заметка...',
+                      prefixIcon: Icon(Icons.edit_note_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton.icon(
+                      onPressed: _save,
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Сохранить'),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          if (notes.isEmpty)
+            const StatePanel.empty(
+              title: 'Заметок пока нет',
+              message: 'Добавьте личную заметку к материалу или создайте её здесь.',
+            ),
+          ...notes.asMap().entries.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Card(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+                  leading: const Icon(Icons.sticky_note_2_outlined),
+                  title: Text(entry.value),
+                  subtitle: const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('Сохранено на устройстве'),
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Удалить заметку',
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    onPressed: () => ref.read(notesProvider.notifier).removeAt(entry.key),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-    ]));
+    );
   }
 }
 
