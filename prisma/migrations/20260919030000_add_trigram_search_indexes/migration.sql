@@ -15,6 +15,9 @@ CREATE INDEX "Disease_icd10_trgm_idx"
 CREATE INDEX "Disease_symptoms_trgm_idx"
   ON "Disease" USING gin ("symptoms" gin_trgm_ops);
 
+CREATE INDEX "Disease_diagnostics_trgm_idx"
+  ON "Disease" USING gin ("diagnostics" gin_trgm_ops);
+
 CREATE INDEX "Disease_treatment_trgm_idx"
   ON "Disease" USING gin ("treatment" gin_trgm_ops);
 
