@@ -6,7 +6,9 @@ import 'api_medical_repository.dart';
 import 'medical_repository.dart';
 
 final medicalRepositoryProvider = Provider<MedicalRepository>((ref) {
-  return ResilientMedicalRepository(ApiMedicalRepository(), OfflineMedicalRepository());
+  final api = ApiMedicalRepository();
+  ref.onDispose(api.close);
+  return ResilientMedicalRepository(api, OfflineMedicalRepository());
 });
 
 final searchQueryProvider = NotifierProvider<SearchQueryController, String>(SearchQueryController.new);
@@ -18,7 +20,7 @@ class SearchQueryController extends Notifier<String> {
 }
 
 final searchResultsProvider = FutureProvider<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).search(ref.watch(searchQueryProvider)));
-final referenceSearchProvider = FutureProvider.family<List<MedicalItem>, String>((ref, query) => ref.watch(medicalRepositoryProvider).search(query));
+final referenceSearchProvider = FutureProvider.autoDispose.family<List<MedicalItem>, String>((ref, query) => ref.watch(medicalRepositoryProvider).search(query));
 final recentItemsProvider = FutureProvider<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).recent());
 final itemsByTypeProvider = FutureProvider.family<List<MedicalItem>, ContentType>((ref, type) => ref.watch(medicalRepositoryProvider).byType(type));
 final itemProvider = FutureProvider.family<MedicalItem?, String>((ref, id) => ref.watch(medicalRepositoryProvider).getById(id));
