@@ -29,6 +29,15 @@ test('GET /api/health returns an operational status', async () => {
   });
 });
 
+test('GET /api/ready verifies database readiness', async () => {
+  const response = await fetch(baseUrl + '/api/ready');
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    name: 'MED SPRAVOCHNIK',
+    status: 'ready',
+  });
+});
+
 test('GET /api/rag filters the library by space and query', async () => {
   const response = await fetch(
     `${baseUrl}/api/rag?q=typescript&space=development`,
