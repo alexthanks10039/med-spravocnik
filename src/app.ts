@@ -32,6 +32,77 @@ app.get('/api/health', (_req, res) =>
   res.json({ name: 'MED SPRAVOCHNIK', status: 'ok' }),
 );
 
+app.get('/api/content', async (req, res, next) => {
+  try {
+    const rawIds = String(req.query.ids ?? '');
+    const ids = [...new Set(
+      rawIds
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+        .slice(0, 50),
+    )];
+
+    if (ids.length === 0) {
+      res.json([]);
+      return;
+    }
+
+    const [diseases, drugs, articles] = await Promise.all([
+      prisma.disease.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          icd10: true,
+          diagnostics: true,
+          symptoms: true,
+          treatment: true,
+        },
+      }),
+      prisma.drug.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          internationalName: true,
+          form: true,
+          dosage: true,
+          indications: true,
+          contraindications: true,
+          sideEffects: true,
+        },
+      }),
+      prisma.article.findMany({
+        where: { id: { in: ids }, isPublished: true },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          description: true,
+          content: true,
+        },
+      }),
+    ]);
+
+    const items = new Map<string, Record<string, unknown>>();
+    for (const item of diseases) items.set(item.id, { type: 'disease', ...item });
+    for (const item of drugs) {
+      if (!items.has(item.id)) items.set(item.id, { type: 'drug', ...item });
+    }
+    for (const item of articles) {
+      if (!items.has(item.id)) items.set(item.id, { type: 'article', ...item });
+    }
+
+    res.json(ids.flatMap((id) => {
+      const item = items.get(id);
+      return item ? [item] : [];
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/api/ready', async (_req, res, next) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
