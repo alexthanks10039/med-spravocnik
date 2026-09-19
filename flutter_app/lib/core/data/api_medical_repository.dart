@@ -125,7 +125,6 @@ class ApiMedicalRepository implements MedicalRepository {
     return result;
   }
 
-
   MedicalItem _map(ContentType type, Map<String, dynamic> d) {
     final id = _s(d['id']);
     final title = type == ContentType.article ? _s(d['title']) : _s(d['name']);
@@ -218,8 +217,14 @@ class ResilientMedicalRepository implements MedicalRepository {
       return offline.search(q);
     }
 
-    final localCalculators = await offline.search(q).then(
-      (items) => items.where((item) => item.type == ContentType.calculator),
+    // The API can legitimately return no matches while the offline catalog
+    // still contains calculators and curated reference entries for the query.
+    // Keep the app useful in that case instead of showing an empty result.
+    final localMatches = await offline.search(q);
+    if (remoteItems.isEmpty) return localMatches;
+
+    final localCalculators = localMatches.where(
+      (item) => item.type == ContentType.calculator,
     );
     final ids = remoteItems.map((item) => item.id).toSet();
     return [
