@@ -34,6 +34,24 @@ final favoriteItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref
   return items.whereType<MedicalItem>().toList(growable: false);
 });
 
+final relatedItemsProvider =
+    FutureProvider.autoDispose.family<List<MedicalItem>, String>((ref, idsKey) async {
+  final ids = idsKey
+      .split(',')
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toList(growable: false);
+  if (ids.isEmpty) return const [];
+
+  final repository = ref.watch(medicalRepositoryProvider);
+  final found = await repository.getByIds(ids);
+  final byId = {for (final item in found) item.id: item};
+  return ids
+      .map((id) => byId[id])
+      .whereType<MedicalItem>()
+      .toList(growable: false);
+});
+
 final notesProvider = NotifierProvider<NotesController, List<String>>(NotesController.new);
 
 final historyIdsProvider =
