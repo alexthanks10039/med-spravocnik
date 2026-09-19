@@ -27,6 +27,21 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DATABASE_URL: postgresql://test:test@127.0.0.1:5432/test
       JWT_SECRET: test-secret-key-for-ci
@@ -52,6 +67,9 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm prisma:generate
+
+      - name: Apply database migrations
+        run: pnpm db:deploy
 
       - name: Type-check
         run: pnpm check
