@@ -31,6 +31,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Upload resolved lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-pubspec-lock
+          path: flutter_app/pubspec.lock
+          retention-days: 1
+
       - name: Analyze
         run: flutter analyze
 
