@@ -10,6 +10,7 @@ import { articlesRouter } from './modules/articles/articles.routes.js';
 import { calculatorsRouter } from './modules/calculators/calculators.routes.js';
 import { ragRouter } from './rag/rag.routes.js';
 import { errorMiddleware } from './shared/middleware/error.middleware.js';
+import { prisma } from './shared/prisma.js';
 import { env } from './config/env.js';
 
 export const app = express();
@@ -30,6 +31,15 @@ app.use(express.static(root));
 app.get('/api/health', (_req, res) =>
   res.json({ name: 'MED SPRAVOCHNIK', status: 'ok' }),
 );
+
+app.get('/api/ready', async (_req, res, next) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ name: 'MED SPRAVOCHNIK', status: 'ready' });
+  } catch (error) {
+    next(error);
+  }
+});
 app.use('/api/auth', authRouter);
 app.use('/api/drugs', drugsRouter);
 app.use('/api/diseases', diseasesRouter);
