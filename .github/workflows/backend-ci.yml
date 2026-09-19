@@ -1,6 +1,10 @@
 name: Backend CI
 
 on:
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
   push:
     paths:
       - 'src/**'
