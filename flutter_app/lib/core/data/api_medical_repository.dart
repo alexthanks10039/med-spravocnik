@@ -1,40 +1,36 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/medical_content.dart';
 import 'medical_repository.dart';
 
 class ApiMedicalRepository implements MedicalRepository {
-  ApiMedicalRepository({String? baseUrl})
+  ApiMedicalRepository({String? baseUrl, http.Client? client})
       : baseUrl = (baseUrl ?? const String.fromEnvironment('MED_API_URL'))
             .trim()
-            .replaceFirst(RegExp(r'/$'), '');
+            .replaceFirst(RegExp(r'/$'), ''),
+        _client = client ?? http.Client();
 
   final String baseUrl;
+  final http.Client _client;
 
-  Future<dynamic> _get(String path, [Map<String, String>? query]) async {
+  Future<Object?> _get(String path, [Map<String, String>? query]) async {
     if (baseUrl.isEmpty) {
       throw StateError('MED_API_URL is not configured');
     }
 
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 5);
-    try {
-      final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-      final request = await client.getUrl(uri);
-      request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-      final response =
-          await request.close().timeout(const Duration(seconds: 8));
-      final body = await utf8.decoder.bind(response).join();
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw HttpException('HTTP ${response.statusCode}');
-      }
-      return jsonDecode(body);
-    } finally {
-      client.close(force: true);
+    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
+    final response = await _client
+        .get(uri, headers: const {'Accept': 'application/json'})
+        .timeout(const Duration(seconds: 8));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw http.ClientException('HTTP ${response.statusCode}', uri);
     }
+
+    return jsonDecode(response.body);
   }
 
   String _path(ContentType type) => switch (type) {
@@ -46,12 +42,13 @@ class ApiMedicalRepository implements MedicalRepository {
 
   @override
   Future<List<MedicalItem>> search(String query) async {
-    if (query.trim().isEmpty) return recent();
     final q = query.trim();
+    if (q.isEmpty) return recent();
+
     final responses = await Future.wait([
-      _get('/diseases', {'q': q}),
-      _get('/drugs', {'q': q}),
-      _get('/articles', {'q': q}),
+      _get('/diseases', {'q': q, 'limit': '30'}),
+      _get('/drugs', {'q': q, 'limit': '30'}),
+      _get('/articles', {'q': q, 'limit': '30'}),
     ]);
     final types = const [
       ContentType.disease,
@@ -60,9 +57,9 @@ class ApiMedicalRepository implements MedicalRepository {
     ];
     final result = <MedicalItem>[];
     for (var i = 0; i < responses.length; i++) {
-      final data = responses[i] as List<dynamic>;
+      final data = responses[i] as List<Object?>;
       result.addAll(
-        data.map((x) => _map(types[i], x as Map<String, dynamic>)),
+        data.whereType<Map<String, dynamic>>().map((x) => _map(types[i], x)),
       );
     }
     return result;
@@ -71,8 +68,11 @@ class ApiMedicalRepository implements MedicalRepository {
   @override
   Future<List<MedicalItem>> byType(ContentType type) async {
     if (type == ContentType.calculator) return const [];
-    final data = await _get(_path(type)) as List<dynamic>;
-    return data.map((x) => _map(type, x as Map<String, dynamic>)).toList();
+    final data = await _get(_path(type), {'limit': '100'}) as List<Object?>;
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map((x) => _map(type, x))
+        .toList(growable: false);
   }
 
   @override
@@ -83,11 +83,9 @@ class ApiMedicalRepository implements MedicalRepository {
       ContentType.article,
     ]) {
       try {
-        return _map(
-          type,
-          await _get('${_path(type)}/$id') as Map<String, dynamic>,
-        );
-      } on HttpException {
+        final data = await _get('${_path(type)}/$id');
+        if (data is Map<String, dynamic>) return _map(type, data);
+      } on http.ClientException {
         // Try the next content type.
       }
     }
@@ -97,17 +95,28 @@ class ApiMedicalRepository implements MedicalRepository {
   @override
   Future<List<MedicalItem>> recent() async {
     final lists = await Future.wait([
-      byType(ContentType.disease),
-      byType(ContentType.drug),
-      byType(ContentType.article),
+      _get('/diseases', {'limit': '2'}),
+      _get('/drugs', {'limit': '2'}),
+      _get('/articles', {'limit': '2'}),
     ]);
-    return lists.expand((x) => x).take(6).toList();
+    final types = const [
+      ContentType.disease,
+      ContentType.drug,
+      ContentType.article,
+    ];
+    final result = <MedicalItem>[];
+    for (var i = 0; i < lists.length; i++) {
+      final data = lists[i] as List<Object?>;
+      result.addAll(
+        data.whereType<Map<String, dynamic>>().map((x) => _map(types[i], x)),
+      );
+    }
+    return result.take(6).toList(growable: false);
   }
 
   MedicalItem _map(ContentType type, Map<String, dynamic> d) {
     final id = _s(d['id']);
-    final title =
-        type == ContentType.article ? _s(d['title']) : _s(d['name']);
+    final title = type == ContentType.article ? _s(d['title']) : _s(d['name']);
     final category = _s(
       d['category'],
       type == ContentType.drug ? 'Препараты' : 'Медицина',
@@ -161,15 +170,15 @@ class ApiMedicalRepository implements MedicalRepository {
     );
   }
 
-  Map<String, String> _sections(Map<String, dynamic> values) => {
+  Map<String, String> _sections(Map<String, Object?> values) => {
         for (final entry in values.entries)
           if (_s(entry.value).isNotEmpty) entry.key: _s(entry.value),
       };
 
-  String _s(dynamic value, [String fallback = '']) =>
+  String _s(Object? value, [String fallback = '']) =>
       value is String && value.trim().isNotEmpty ? value.trim() : fallback;
 
-  String? _n(dynamic value) => _s(value).isEmpty ? null : _s(value);
+  String? _n(Object? value) => _s(value).isEmpty ? null : _s(value);
 }
 
 class ResilientMedicalRepository implements MedicalRepository {
@@ -178,10 +187,7 @@ class ResilientMedicalRepository implements MedicalRepository {
   final MedicalRepository remote;
   final MedicalRepository offline;
 
-  Future<T> _run<T>(
-    Future<T> Function() action,
-    Future<T> Function() fallback,
-  ) async {
+  Future<T> _run<T>(Future<T> Function() action, Future<T> Function() fallback) async {
     try {
       return await action();
     } catch (_) {
@@ -225,6 +231,5 @@ class ResilientMedicalRepository implements MedicalRepository {
   }
 
   @override
-  Future<List<MedicalItem>> recent() =>
-      _run(() => remote.recent(), () => offline.recent());
+  Future<List<MedicalItem>> recent() => _run(() => remote.recent(), () => offline.recent());
 }
