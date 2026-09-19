@@ -52,11 +52,20 @@ articlesRouter.get('/', async (req, res, next) => {
 articlesRouter.get('/:id', async (req, res, next) => {
   try {
     const item = await prisma.article.findUnique({
-      select: { id: true, title: true, category: true, description: true, content: true },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        content: true,
+        isPublished: true,
+      },
       where: { id: req.params.id },
     });
     if (!item || !item.isPublished) throw new AppError('Article not found', 404);
-    res.json(item);
+
+    const { isPublished: _isPublished, ...publicItem } = item;
+    res.json(publicItem);
   } catch (error) {
     next(error);
   }
