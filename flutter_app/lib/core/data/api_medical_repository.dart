@@ -126,28 +126,6 @@ class ApiMedicalRepository implements MedicalRepository {
   }
 
 
-  @override
-  Future<List<MedicalItem>> recent() async {
-    final lists = await Future.wait([
-      _get('/diseases', {'limit': '2'}),
-      _get('/drugs', {'limit': '2'}),
-      _get('/articles', {'limit': '2'}),
-    ]);
-    final types = const [
-      ContentType.disease,
-      ContentType.drug,
-      ContentType.article,
-    ];
-    final result = <MedicalItem>[];
-    for (var i = 0; i < lists.length; i++) {
-      final data = lists[i] as List<Object?>;
-      result.addAll(
-        data.whereType<Map<String, dynamic>>().map((x) => _map(types[i], x)),
-      );
-    }
-    return result.take(6).toList(growable: false);
-  }
-
   MedicalItem _map(ContentType type, Map<String, dynamic> d) {
     final id = _s(d['id']);
     final title = type == ContentType.article ? _s(d['title']) : _s(d['name']);
@@ -281,6 +259,4 @@ class ResilientMedicalRepository implements MedicalRepository {
     }
   }
 
-  @override
-  Future<List<MedicalItem>> recent() => _run(() => remote.recent(), () => offline.recent());
 }
