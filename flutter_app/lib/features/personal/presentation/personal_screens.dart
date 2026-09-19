@@ -229,7 +229,30 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
   @override Widget build(BuildContext context) => ScreenFrame(title: 'Профиль', child: Column(children: [
-    Card(child: Padding(padding: const EdgeInsets.all(20), child: Row(children: [const CircleAvatar(radius: 32, child: Text('ДТ', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18))), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Доктор Тестовый', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 4), const Text('Терапевт · Алматы')]))]))),
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 32,
+              child: Icon(Icons.person_outline_rounded, size: 30),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Личный профиль', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 4),
+                  const Text('Профиль врача пока не настроен'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
     const SizedBox(height: 14),
     Card(child: Column(children: [ListTile(leading: const Icon(Icons.settings_outlined), title: const Text('Настройки'), trailing: const Icon(Icons.chevron_right), onTap: () => context.go('/settings')), const Divider(height: 1), const ListTile(leading: Icon(Icons.workspace_premium_outlined), title: Text('Профессиональный профиль'), subtitle: Text('Специальность и интересы'), trailing: Icon(Icons.chevron_right)), const Divider(height: 1), const ListTile(leading: Icon(Icons.info_outline), title: Text('О приложении'), subtitle: Text('Версия 1.0.0 MVP'), trailing: Icon(Icons.chevron_right))])),
   ]));
@@ -256,8 +279,42 @@ class SettingsScreen extends ConsumerWidget {
         ),
       )),
       const SizedBox(height: 20), Text('Офлайн и данные', style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 10),
-      const Card(child: Column(children: [SwitchListTile(value: true, onChanged: null, title: Text('Автоматическое обновление'), subtitle: Text('Только по Wi-Fi')), Divider(height: 1), ListTile(leading: Icon(Icons.storage_outlined), title: Text('Офлайн-библиотека'), subtitle: Text('24,6 МБ · обновлено сегодня'), trailing: Icon(Icons.chevron_right))])),
-      const SizedBox(height: 20), const Card(child: Column(children: [SwitchListTile(value: true, onChanged: null, title: Text('Предупреждения о безопасности')), Divider(height: 1), SwitchListTile(value: false, onChanged: null, title: Text('Аналитика использования'))])),
+      const Card(
+        child: Column(
+          children: [
+            ListTile(
+              leading: Icon(Icons.sync_outlined),
+              title: Text('Автоматическое обновление'),
+              subtitle: Text('Функция будет доступна в модуле синхронизации'),
+            ),
+            Divider(height: 1),
+            ListTile(
+              leading: Icon(Icons.storage_outlined),
+              title: Text('Офлайн-библиотека'),
+              subtitle: Text('Локальный fallback доступен без сети'),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 20),
+      const Card(
+        child: Column(
+          children: [
+            SwitchListTile(
+              value: true,
+              onChanged: null,
+              title: Text('Предупреждения о безопасности'),
+              subtitle: Text('Всегда включены в текущей версии'),
+            ),
+            Divider(height: 1),
+            ListTile(
+              leading: Icon(Icons.analytics_outlined),
+              title: Text('Аналитика использования'),
+              subtitle: Text('Не включена'),
+            ),
+          ],
+        ),
+      ),
     ]));
   }
 }
