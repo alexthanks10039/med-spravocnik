@@ -167,7 +167,6 @@ class OfflineMedicalRepository implements MedicalRepository {
 
   @override
   Future<List<MedicalItem>> search(String query) async {
-    await Future<void>.delayed(const Duration(milliseconds: 220));
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) return _items;
     return _items
