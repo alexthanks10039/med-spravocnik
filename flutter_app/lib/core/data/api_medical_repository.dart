@@ -52,7 +52,7 @@ class ApiMedicalRepository implements MedicalRepository {
   @override
   Future<List<MedicalItem>> search(String query) async {
     final q = query.trim();
-    if (q.isEmpty) return recent();
+    if (q.isEmpty) return const [];
 
     final responses = await Future.wait([
       _get('/diseases', {'q': q, 'limit': '30'}),
