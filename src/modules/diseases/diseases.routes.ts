@@ -1,16 +1,18 @@
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { prisma } from '../../shared/prisma.js';
 import { adminMiddleware, authMiddleware } from '../../shared/middleware/auth.middleware.js';
 import { AppError } from '../../shared/middleware/error.middleware.js';
 
 export const diseasesRouter = Router();
+
 const schema = z.object({
-  name: z.string().min(2),
-  icd10: z.string().optional(),
-  symptoms: z.string().optional(),
-  diagnostics: z.string().optional(),
-  treatment: z.string().optional(),
+  name: z.string().trim().min(2).max(300),
+  icd10: z.string().trim().max(50).optional(),
+  symptoms: z.string().max(20_000).optional(),
+  diagnostics: z.string().max(20_000).optional(),
+  treatment: z.string().max(20_000).optional(),
 });
 
 const querySchema = z.string().trim().max(200).default('');
@@ -20,39 +22,45 @@ diseasesRouter.get('/', async (req, res, next) => {
   try {
     const q = querySchema.parse(req.query.q);
     const limit = limitSchema.parse(req.query.limit);
-    res.json(await prisma.disease.findMany({
+
+    const items = await prisma.disease.findMany({
+      select: { id: true, name: true, icd10: true },
       where: q
         ? {
             OR: [
               { name: { contains: q, mode: 'insensitive' } },
               { icd10: { contains: q, mode: 'insensitive' } },
               { symptoms: { contains: q, mode: 'insensitive' } },
+              { diagnostics: { contains: q, mode: 'insensitive' } },
               { treatment: { contains: q, mode: 'insensitive' } },
             ],
           }
         : undefined,
       orderBy: { name: 'asc' },
       take: limit,
-    }));
-  } catch (e) {
-    next(e);
+    });
+
+    res.json(items);
+  } catch (error) {
+    next(error);
   }
 });
 
 diseasesRouter.get('/:id', async (req, res, next) => {
   try {
-    const x = await prisma.disease.findUnique({ where: { id: req.params.id } });
-    if (!x) throw new AppError('Disease not found', 404);
-    res.json(x);
-  } catch (e) {
-    next(e);
+    const item = await prisma.disease.findUnique({ where: { id: req.params.id } });
+    if (!item) throw new AppError('Disease not found', 404);
+    res.json(item);
+  } catch (error) {
+    next(error);
   }
 });
 
 diseasesRouter.post('/', authMiddleware, adminMiddleware, async (req, res, next) => {
   try {
-    res.status(201).json(await prisma.disease.create({ data: schema.parse(req.body) }));
-  } catch (e) {
-    next(e);
+    const item = await prisma.disease.create({ data: schema.parse(req.body) });
+    res.status(201).json(item);
+  } catch (error) {
+    next(error);
   }
 });
