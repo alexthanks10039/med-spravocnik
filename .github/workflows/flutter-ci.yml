@@ -1,6 +1,10 @@
 name: Flutter CI
 
 on:
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
   push:
     paths:
       - 'flutter_app/**'
