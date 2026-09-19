@@ -90,6 +90,22 @@ test('GET /api/articles returns lightweight catalog fields', async () => {
   assert.equal('content' in body[0], false);
 });
 
+test('GET /api/content batches known materials in requested order', async () => {
+  const response = await fetch(
+    baseUrl + '/api/content?ids=seed-amoxicillin,seed-hypertension,missing-id',
+  );
+  assert.equal(response.status, 200);
+
+  const body = await response.json();
+  assert.deepEqual(
+    body.map((item: { id: string; type: string }) => [item.id, item.type]),
+    [
+      ['seed-amoxicillin', 'drug'],
+      ['seed-hypertension', 'disease'],
+    ],
+  );
+});
+
 test('POST /api/calculators/bmi calculates BMI', async () => {
   const response = await fetch(`${baseUrl}/api/calculators/bmi`, {
     method: 'POST',
