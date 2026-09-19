@@ -48,7 +48,19 @@ drugsRouter.get('/', async (req, res, next) => {
 
 drugsRouter.get('/:id', async (req, res, next) => {
   try {
-    const item = await prisma.drug.findUnique({ where: { id: req.params.id } });
+    const item = await prisma.drug.findUnique({
+      select: {
+        id: true,
+        name: true,
+        internationalName: true,
+        form: true,
+        dosage: true,
+        indications: true,
+        contraindications: true,
+        sideEffects: true,
+      },
+      where: { id: req.params.id },
+    });
     if (!item) throw new AppError('Drug not found', 404);
     res.json(item);
   } catch (error) {
