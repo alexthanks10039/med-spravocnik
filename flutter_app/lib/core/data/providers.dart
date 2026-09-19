@@ -21,7 +21,6 @@ class SearchQueryController extends Notifier<String> {
 
 final searchResultsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).search(ref.watch(searchQueryProvider)));
 final referenceSearchProvider = FutureProvider.autoDispose.family<List<MedicalItem>, String>((ref, query) => ref.watch(medicalRepositoryProvider).search(query));
-final recentItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) => ref.watch(medicalRepositoryProvider).recent());
 final itemsByTypeProvider = FutureProvider.autoDispose.family<List<MedicalItem>, ContentType>((ref, type) => ref.watch(medicalRepositoryProvider).byType(type));
 final itemProvider = FutureProvider.autoDispose.family<MedicalItem?, String>((ref, id) => ref.watch(medicalRepositoryProvider).getById(id));
 
