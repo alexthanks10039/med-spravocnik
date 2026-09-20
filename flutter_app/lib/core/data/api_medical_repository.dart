@@ -42,6 +42,23 @@ class ApiMedicalRepository implements MedicalRepository {
     return jsonDecode(response.body);
   }
 
+  Future<List<Object?>> _getListBestEffort(
+    String path,
+    Map<String, String> query,
+  ) async {
+    try {
+      final data = await _get(path, query);
+      if (data is! List<Object?>) {
+        throw const FormatException('Invalid list response');
+      }
+      return data;
+    } catch (_) {
+      // Search is intentionally tolerant: one unavailable content module
+      // should not hide successful results from the other modules.
+      return const <Object?>[];
+    }
+  }
+
   String _path(ContentType type) => switch (type) {
         ContentType.disease => '/diseases',
         ContentType.drug => '/drugs',
@@ -55,9 +72,9 @@ class ApiMedicalRepository implements MedicalRepository {
     if (q.isEmpty) return const [];
 
     final responses = await Future.wait([
-      _get('/diseases', {'q': q, 'limit': '30'}),
-      _get('/drugs', {'q': q, 'limit': '30'}),
-      _get('/articles', {'q': q, 'limit': '30'}),
+      _getListBestEffort('/diseases', {'q': q, 'limit': '30'}),
+      _getListBestEffort('/drugs', {'q': q, 'limit': '30'}),
+      _getListBestEffort('/articles', {'q': q, 'limit': '30'}),
     ]);
     final types = const [
       ContentType.disease,
@@ -66,9 +83,10 @@ class ApiMedicalRepository implements MedicalRepository {
     ];
     final result = <MedicalItem>[];
     for (var i = 0; i < responses.length; i++) {
-      final data = responses[i] as List<Object?>;
       result.addAll(
-        data.whereType<Map<String, dynamic>>().map((x) => _map(types[i], x)),
+        responses[i]
+            .whereType<Map<String, dynamic>>()
+            .map((x) => _map(types[i], x)),
       );
     }
     return result;
@@ -265,5 +283,4 @@ class ResilientMedicalRepository implements MedicalRepository {
       return offline.getByIds(normalizedIds);
     }
   }
-
 }
