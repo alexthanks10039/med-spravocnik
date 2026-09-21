@@ -239,16 +239,25 @@ class ResilientMedicalRepository implements MedicalRepository {
     // still contains calculators and curated reference entries for the query.
     // Keep the app useful in that case instead of showing an empty result.
     final localMatches = await offline.search(q);
-    if (remoteItems.isEmpty) return localMatches;
+    final result = <MedicalItem>[];
+    final seenIds = <String>{};
 
-    final localCalculators = localMatches.where(
-      (item) => item.type == ContentType.calculator,
+    void addUnique(Iterable<MedicalItem> items) {
+      for (final item in items) {
+        if (seenIds.add(item.id)) result.add(item);
+      }
+    }
+
+    if (remoteItems.isEmpty) {
+      addUnique(localMatches);
+      return result;
+    }
+
+    addUnique(remoteItems);
+    addUnique(
+      localMatches.where((item) => item.type == ContentType.calculator),
     );
-    final ids = remoteItems.map((item) => item.id).toSet();
-    return [
-      ...remoteItems,
-      ...localCalculators.where((item) => ids.add(item.id)),
-    ];
+    return result;
   }
 
   @override
