@@ -113,7 +113,7 @@ void main() {
   });
 
   test('resilient search falls back to local matches when remote is empty', () async {
-    const resilient = ResilientMedicalRepository(
+    final resilient = ResilientMedicalRepository(
       _EmptyRemoteRepository(),
       OfflineMedicalRepository(),
     );
@@ -124,7 +124,7 @@ void main() {
   });
 
   test('resilient search removes duplicate remote ids', () async {
-    const resilient = ResilientMedicalRepository(
+    final resilient = ResilientMedicalRepository(
       _DuplicateRemoteRepository(),
       OfflineMedicalRepository(),
     );
@@ -135,7 +135,7 @@ void main() {
   });
 
   test('resilient search ranks exact title matches before weaker matches', () async {
-    const resilient = ResilientMedicalRepository(
+    final resilient = ResilientMedicalRepository(
       _UnorderedRemoteRepository(),
       OfflineMedicalRepository(),
     );
