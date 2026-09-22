@@ -9,6 +9,10 @@ on:
     paths:
       - 'flutter_app/**'
       - '.github/workflows/ios-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ios-ci-${{ github.ref }}
@@ -29,8 +33,11 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.47.5'
           cache: true
+
+      - name: Show toolchain
+        run: flutter --version
 
       - name: Install dependencies
         run: flutter pub get
