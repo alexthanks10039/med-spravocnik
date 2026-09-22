@@ -9,6 +9,10 @@ on:
     paths:
       - 'flutter_app/**'
       - '.github/workflows/flutter-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: flutter-ci-${{ github.ref }}
@@ -29,8 +33,11 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.47.5'
           cache: true
+
+      - name: Show toolchain
+        run: flutter --version
 
       - name: Install dependencies
         run: flutter pub get
@@ -42,4 +49,11 @@ jobs:
         run: flutter test
 
       - name: Build web
-        run: flutter build web --release
+        run: flutter build web --release --base-href /med-spravocnik/
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-reference-web
+          path: flutter_app/build/web
+          retention-days: 7
