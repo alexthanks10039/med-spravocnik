@@ -53,8 +53,6 @@ class ApiMedicalRepository implements MedicalRepository {
       }
       return data;
     } catch (_) {
-      // Search is intentionally tolerant: one unavailable content module
-      // should not hide successful results from the other modules.
       return const <Object?>[];
     }
   }
@@ -82,12 +80,12 @@ class ApiMedicalRepository implements MedicalRepository {
       ContentType.article,
     ];
     final result = <MedicalItem>[];
+    final seenIds = <String>{};
     for (var i = 0; i < responses.length; i++) {
-      result.addAll(
-        responses[i]
-            .whereType<Map<String, dynamic>>()
-            .map((x) => _map(types[i], x)),
-      );
+      for (final raw in responses[i].whereType<Map<String, dynamic>>()) {
+        final item = _map(types[i], raw);
+        if (item.id.isNotEmpty && seenIds.add(item.id)) result.add(item);
+      }
     }
     return result;
   }
@@ -99,6 +97,7 @@ class ApiMedicalRepository implements MedicalRepository {
     return data
         .whereType<Map<String, dynamic>>()
         .map((x) => _map(type, x))
+        .where((item) => item.id.isNotEmpty)
         .toList(growable: false);
   }
 
@@ -127,6 +126,7 @@ class ApiMedicalRepository implements MedicalRepository {
     }
 
     final result = <MedicalItem>[];
+    final seenIds = <String>{};
     for (final item in data.whereType<Map<String, dynamic>>()) {
       final typeName = _s(item['type']);
       final rawType = switch (typeName) {
@@ -138,7 +138,8 @@ class ApiMedicalRepository implements MedicalRepository {
       if (rawType == null) continue;
 
       final payload = Map<String, dynamic>.from(item)..remove('type');
-      result.add(_map(rawType, payload));
+      final mapped = _map(rawType, payload);
+      if (mapped.id.isNotEmpty && seenIds.add(mapped.id)) result.add(mapped);
     }
     return result;
   }
@@ -226,7 +227,8 @@ class ResilientMedicalRepository implements MedicalRepository {
 
   @override
   Future<List<MedicalItem>> search(String q) async {
-    if (q.trim().isEmpty) return offline.search(q);
+    final normalizedQuery = q.trim();
+    if (normalizedQuery.isEmpty) return offline.search(q);
 
     List<MedicalItem> remoteItems;
     try {
@@ -235,29 +237,45 @@ class ResilientMedicalRepository implements MedicalRepository {
       return offline.search(q);
     }
 
-    // The API can legitimately return no matches while the offline catalog
-    // still contains calculators and curated reference entries for the query.
-    // Keep the app useful in that case instead of showing an empty result.
     final localMatches = await offline.search(q);
     final result = <MedicalItem>[];
     final seenIds = <String>{};
 
     void addUnique(Iterable<MedicalItem> items) {
       for (final item in items) {
-        if (seenIds.add(item.id)) result.add(item);
+        if (item.id.isNotEmpty && seenIds.add(item.id)) result.add(item);
       }
     }
 
     if (remoteItems.isEmpty) {
       addUnique(localMatches);
-      return result;
+      return _rank(normalizedQuery, result);
     }
 
     addUnique(remoteItems);
     addUnique(
       localMatches.where((item) => item.type == ContentType.calculator),
     );
-    return result;
+    return _rank(normalizedQuery, result);
+  }
+
+  List<MedicalItem> _rank(String query, List<MedicalItem> items) {
+    final needle = query.toLowerCase();
+    int score(MedicalItem item) {
+      final title = item.title.toLowerCase();
+      final subtitle = item.subtitle.toLowerCase();
+      final category = item.category.toLowerCase();
+      if (title == needle) return 0;
+      if (title.startsWith(needle)) return 1;
+      if (title.contains(needle)) return 2;
+      if (subtitle.contains(needle)) return 3;
+      if (category.contains(needle)) return 4;
+      return 5;
+    }
+
+    final ranked = [...items];
+    ranked.sort((a, b) => score(a).compareTo(score(b)));
+    return ranked;
   }
 
   @override
