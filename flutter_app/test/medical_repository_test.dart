@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:doctor_reference/core/data/medical_repository.dart';
@@ -33,6 +34,41 @@ class _DuplicateRemoteRepository implements MedicalRepository {
     );
     return [item, item];
   }
+
+  @override
+  Future<List<MedicalItem>> byType(ContentType type) async => const [];
+
+  @override
+  Future<MedicalItem?> getById(String id) async => null;
+
+  @override
+  Future<List<MedicalItem>> getByIds(Iterable<String> ids) async => const [];
+}
+
+class _UnorderedRemoteRepository implements MedicalRepository {
+  @override
+  Future<List<MedicalItem>> search(String query) async => [
+        MedicalItem(
+          id: 'article-1',
+          type: ContentType.article,
+          title: 'Поддерживающая терапия',
+          subtitle: 'Обзор',
+          category: 'Медицина',
+          icon: Icons.article_outlined,
+          badge: 'Статья',
+          sections: const {},
+        ),
+        MedicalItem(
+          id: 'article-2',
+          type: ContentType.article,
+          title: 'Гипертония',
+          subtitle: 'Артериальное давление',
+          category: 'Медицина',
+          icon: Icons.article_outlined,
+          badge: 'Статья',
+          sections: const {},
+        ),
+      ];
 
   @override
   Future<List<MedicalItem>> byType(ContentType type) async => const [];
@@ -96,5 +132,16 @@ void main() {
     final results = await resilient.search('статья');
 
     expect(results.where((item) => item.id == 'remote-1'), hasLength(1));
+  });
+
+  test('resilient search ranks exact title matches before weaker matches', () async {
+    const resilient = ResilientMedicalRepository(
+      _UnorderedRemoteRepository(),
+      OfflineMedicalRepository(),
+    );
+
+    final results = await resilient.search('гипертония');
+
+    expect(results.first.id, 'article-2');
   });
 }
