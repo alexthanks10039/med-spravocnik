@@ -81,9 +81,10 @@ function unwrapMcpPayload(input: unknown): unknown[] {
   if (!root || typeof root !== 'object') return [root];
 
   const object = root as Record<string, unknown>;
-  for (const key of ['items', 'results', 'records', 'data', 'documents', 'resources']) {
+  for (const key of ['items', 'results', 'records', 'data', 'documents', 'resources', 'content']) {
     const candidate = parseEmbeddedJson(object[key]);
     if (Array.isArray(candidate)) return unwrapMcpPayload(candidate);
+    if (key === 'content' && candidate && typeof candidate === 'object') return unwrapMcpPayload(candidate);
   }
 
   if (object.type === 'text' && 'text' in object) {
