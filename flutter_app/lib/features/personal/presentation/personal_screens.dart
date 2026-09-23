@@ -131,7 +131,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     final value = controller.text.trim();
     if (value.isEmpty) return;
 
-    ref.read(notesProvider.notifier).add(value);
+    ref.read(notesProvider.notifier).add(value, sourceId: sourceId);
     controller.clear();
     FocusScope.of(context).unfocus();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -206,10 +206,12 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                 child: ListTile(
                   contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
                   leading: const Icon(Icons.sticky_note_2_outlined),
-                  title: Text(entry.value),
-                  subtitle: const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text('Сохранено на устройстве'),
+                  title: Text(entry.value.text),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: entry.value.sourceId == null
+                        ? const Text('Сохранено на устройстве')
+                        : _NoteSourceLink(sourceId: entry.value.sourceId!),
                   ),
                   trailing: IconButton(
                     tooltip: 'Удалить заметку',
@@ -327,4 +329,38 @@ class _Shortcut extends StatelessWidget {
     label: semanticLabel,
     child: Card(child: InkWell(borderRadius: BorderRadius.circular(20), onTap: onTap, child: Padding(padding: const EdgeInsets.all(18), child: Column(children: [Icon(icon, color: Theme.of(context).colorScheme.primary), const SizedBox(height: 8), Text(title, style: Theme.of(context).textTheme.titleMedium)])))),
   );
+}
+
+class _NoteSourceLink extends ConsumerWidget {
+  const _NoteSourceLink({required this.sourceId});
+
+  final String sourceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final source = ref.watch(itemProvider(sourceId));
+    return source.when(
+      loading: () => const Text('Загрузка источника...'),
+      error: (_, _) => const Text('Источник недоступен'),
+      data: (item) => item == null
+          ? const Text('Источник недоступен')
+          : InkWell(
+              onTap: () => context.push('/detail/${item.id}'),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.link_rounded, size: 15),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      'Материал: ${item.title}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
 }
