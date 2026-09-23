@@ -22,7 +22,7 @@ Main: `33b3c329dde3bd3cd83689943a0c53889a220e22`
   - bulk status changes
   - audit log
 - Backend CI has PostgreSQL migration + seed + TypeScript check + smoke tests.
-- The latest CI run before the current fix failed only at TypeScript type-check because the versioned import transaction and Prisma JSON null typing were incorrect. That failure is being fixed in this commit.
+- The latest verified Backend CI run is green: migrations, seed, TypeScript type-check and smoke tests all passed. The import path now uses a transaction callback, correct Prisma JSON null typing, PostgreSQL advisory locks for concurrent keys, and checksum-based no-op handling for identical retries.
 
 ## Backlog
 
@@ -34,9 +34,9 @@ Main: `33b3c329dde3bd3cd83689943a0c53889a220e22`
 4. [x] Import/export API
 5. [x] Audit log
 6. [x] Fix Prisma JSON typing and transaction API
-7. [ ] Re-run CI and make main green
-8. [ ] Add automated tests for import, versioning, rollback, bulk status and MCP envelopes
-9. [ ] Make concurrent imports safe and idempotent under retries
+7. [x] Re-run CI and make main green
+8. [x] Add automated tests for import, versioning, rollback, bulk status and MCP envelopes
+9. [x] Make concurrent imports safe and idempotent under retries
 
 ### P1. Large-data ingestion
 
