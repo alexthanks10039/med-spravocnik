@@ -294,12 +294,37 @@ async function openRecord(recordId) {
     db("#dbRecordTitle").textContent = item.title || item.externalId;
     db("#dbRecordMeta").textContent = `${item.recordType || "object"} • v${item.version} • ${item.status}`;
     db("#dbRecordJson").textContent = JSON.stringify(item.payload, null, 2);
+    db("#dbVersions").hidden = true;
+    db("#dbVersions").replaceChildren();
+    db("#dbVersionsButton").onclick = () => loadRecordVersions(item.id);
     db("#dbRecordPanel").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     db("#dbRecordMeta").textContent = error.message || "Не удалось открыть запись.";
   }
 }
 
+
+async function loadRecordVersions(recordId) {
+  try {
+    const data = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/records/${encodeURIComponent(recordId)}/versions`);
+    const box = db("#dbVersions");
+    box.hidden = false;
+    if (!data.items.length) {
+      box.textContent = `История пока пустая. Текущая версия: v${data.currentVersion}.`;
+      return;
+    }
+    box.innerHTML = `<strong>История версий</strong> • текущая v${data.currentVersion}<div class="version-list">${data.items.map((v) => `<div class="version-row"><span>v${v.version}</span><small>${escapeHtml(new Date(v.createdAt).toLocaleString("ru-RU"))}</small><button data-version="${v.version}">Откатить</button></div>`).join("")}</div>`;
+    box.querySelectorAll("[data-version]").forEach((button) => {
+      button.onclick = async () => {
+        if (!confirm(`Откатить запись к версии v${button.dataset.version}?`)) return;
+        await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/records/${encodeURIComponent(recordId)}/rollback/${button.dataset.version}`, { method: "POST" });
+        await openRecord(recordId);
+      };
+    });
+  } catch (error) {
+    db("#dbRecordMeta").textContent = error.message || "Не удалось загрузить историю.";
+  }
+}
 
 async function exportDbCollection() {
   try {
