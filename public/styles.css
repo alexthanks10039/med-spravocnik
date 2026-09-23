@@ -534,3 +534,20 @@ button:hover {
     flex-direction: column;
   }
 }
+
+
+.db-login{padding:18px;border:1px solid var(--border,#dfe4ea);border-radius:16px;background:var(--surface,#fff);margin-top:18px}
+.db-toolbar{margin-bottom:16px}
+.db-toolbar select{min-width:220px}
+.db-stats{font-size:13px;color:#64748b;margin:10px 0}
+.nested{margin:16px 0;background:#f8fafc}
+.nested textarea{width:100%;box-sizing:border-box;margin:10px 0;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+.db-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:14px}
+.db-table{width:100%;border-collapse:collapse;min-width:760px;background:#fff}
+.db-table th,.db-table td{padding:11px 13px;border-bottom:1px solid #edf0f3;text-align:left;font-size:13px}
+.db-table th{background:#f8fafc;color:#475569;font-weight:700;position:sticky;top:0}
+.db-table code{font-size:12px}
+.small-button{padding:5px 9px}
+.empty-cell{text-align:center!important;color:#64748b;padding:32px!important}
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px}
+.json-view{margin:0;max-height:650px;overflow:auto;background:#0f172a;color:#e2e8f0;border-radius:14px;padding:18px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
