@@ -301,6 +301,21 @@ async function openRecord(recordId) {
 }
 
 
+async function exportDbCollection() {
+  try {
+    const data = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/export`);
+    const blob = new Blob([JSON.stringify(data.items, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${data.collection.key}-export.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    alert(error.message || "Не удалось экспортировать коллекцию.");
+  }
+}
+
 async function createDbCollection() {
   const key = prompt("Ключ коллекции (латиница, цифры, _ или -):", "medical-mcp");
   if (!key) return;
@@ -343,7 +358,7 @@ db("#dbQuery").oninput = (() => {
 })();
 db("#dbPrev").onclick = () => { if (dbState.page > 1) { dbState.page--; loadRecords(); } };
 db("#dbNext").onclick = () => { dbState.page++; loadRecords(); };
-db("#dbImportToggle").onclick = () => { db("#dbImportPanel").hidden = !db("#dbImportPanel").hidden; };
+db("#dbImportToggle").onclick = () => { db("#dbImportPanel").hidden = !db("#dbImportPanel").hidden; };\ndb("#dbExport").onclick = exportDbCollection;
 db("#dbImport").onclick = importDbPayload;
 db("#dbCreateCollection").onclick = createDbCollection;
 
