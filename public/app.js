@@ -165,3 +165,170 @@ document.querySelector("#calculateEgfr").onclick = async () => {
 
 checkHealth();
 renderEmptyState("Введите запрос, чтобы показать материалы библиотеки.");
+
+
+const dbState = { token: localStorage.getItem("med_admin_token") || "", collectionId: "", page: 1, pageSize: 50, total: 0 };
+const db = (id) => document.querySelector(id);
+
+function dbHeaders() {
+  return { "Content-Type": "application/json", ...(dbState.token ? { Authorization: `Bearer ${dbState.token}` } : {}) };
+}
+
+async function dbFetch(path, options = {}) {
+  const response = await fetch(path, { ...options, headers: { ...dbHeaders(), ...(options.headers || {}) } });
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 401 || response.status === 403) {
+    dbState.token = "";
+    localStorage.removeItem("med_admin_token");
+    dbWorkspace(false);
+  }
+  if (!response.ok) throw new Error(data.message || `Database request failed: ${response.status}`);
+  return data;
+}
+
+function dbWorkspace(authorized) {
+  db("#dbLogin").hidden = authorized;
+  db("#dbWorkspace").hidden = !authorized;
+}
+
+async function dbLogin() {
+  const meta = db("#dbLoginMeta");
+  meta.textContent = "Входим...";
+  try {
+    const data = await dbFetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: db("#dbEmail").value, password: db("#dbPassword").value })
+    });
+    if (data.user?.role !== "ADMIN") throw new Error("Для Data Store нужна роль ADMIN.");
+    dbState.token = data.token;
+    localStorage.setItem("med_admin_token", data.token);
+    dbWorkspace(true);
+    meta.textContent = "Авторизация успешна.";
+    await loadCollections();
+  } catch (error) {
+    meta.textContent = error.message || "Не удалось войти.";
+  }
+}
+
+async function loadCollections() {
+  try {
+    const collections = await dbFetch("/api/data/collections");
+    const select = db("#dbCollection");
+    select.replaceChildren();
+    if (!collections.length) {
+      const option = document.createElement("option");
+      option.textContent = "Коллекций нет";
+      option.value = "";
+      select.appendChild(option);
+      dbState.collectionId = "";
+      renderDbRows([]);
+      return;
+    }
+    collections.forEach((collection) => {
+      const option = document.createElement("option");
+      option.value = collection.id;
+      option.textContent = `${collection.name} • ${collection._count.records} записей`;
+      select.appendChild(option);
+    });
+    if (!collections.some((item) => item.id === dbState.collectionId)) dbState.collectionId = collections[0].id;
+    select.value = dbState.collectionId;
+    dbState.page = 1;
+    await loadRecords();
+  } catch (error) {
+    db("#dbStats").textContent = error.message || "Не удалось загрузить коллекции.";
+  }
+}
+
+async function loadRecords() {
+  if (!dbState.collectionId) return;
+  const params = new URLSearchParams({
+    page: String(dbState.page),
+    pageSize: String(dbState.pageSize),
+    q: db("#dbQuery").value.trim()
+  });
+  try {
+    const data = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/records?${params}`);
+    dbState.total = data.total;
+    db("#dbStats").textContent = `${data.total} записей • ${data.pages || 1} страниц`;
+    db("#dbPage").textContent = `Страница ${data.page} из ${Math.max(data.pages, 1)}`;
+    db("#dbPrev").disabled = data.page <= 1;
+    db("#dbNext").disabled = data.page >= data.pages;
+    renderDbRows(data.items);
+  } catch (error) {
+    db("#dbStats").textContent = error.message || "Не удалось загрузить записи.";
+    renderDbRows([]);
+  }
+}
+
+function renderDbRows(items) {
+  const tbody = db("#dbRows");
+  tbody.replaceChildren();
+  if (!items.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = '<td colspan="6" class="empty-cell">Записей нет</td>';
+    tbody.appendChild(row);
+    return;
+  }
+  items.forEach((item) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><code>${escapeHtml(item.externalId)}</code></td>
+      <td>${escapeHtml(item.title || "—")}</td>
+      <td>${escapeHtml(item.recordType || "object")}</td>
+      <td>${escapeHtml(item.version)}</td>
+      <td>${escapeHtml(new Date(item.updatedAt).toLocaleString("ru-RU"))}</td>
+      <td><button class="small-button" data-record-id="${escapeHtml(item.id)}">JSON</button></td>
+    `;
+    row.querySelector("button").onclick = () => openRecord(item.id);
+    tbody.appendChild(row);
+  });
+}
+
+async function openRecord(recordId) {
+  try {
+    const item = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/records/${encodeURIComponent(recordId)}`);
+    db("#dbRecordPanel").hidden = false;
+    db("#dbRecordTitle").textContent = item.title || item.externalId;
+    db("#dbRecordMeta").textContent = `${item.recordType || "object"} • v${item.version} • ${item.status}`;
+    db("#dbRecordJson").textContent = JSON.stringify(item.payload, null, 2);
+    db("#dbRecordPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    db("#dbRecordMeta").textContent = error.message || "Не удалось открыть запись.";
+  }
+}
+
+async function importDbPayload() {
+  const meta = db("#dbImportMeta");
+  meta.textContent = "Импортируем...";
+  try {
+    const payload = JSON.parse(db("#dbPayload").value);
+    const result = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/import`, {
+      method: "POST",
+      body: JSON.stringify({ filename: db("#dbFilename").value.trim() || undefined, data: payload })
+    });
+    meta.textContent = `Готово: ${result.imported}/${result.total}, ошибок: ${result.rejected}.`;
+    await loadCollections();
+  } catch (error) {
+    meta.textContent = error.message || "Ошибка импорта. Проверьте JSON.";
+  }
+}
+
+db("#dbLoginButton").onclick = dbLogin;
+db("#dbPassword").onkeydown = (event) => { if (event.key === "Enter") dbLogin(); };
+db("#dbCollection").onchange = async (event) => { dbState.collectionId = event.target.value; dbState.page = 1; await loadRecords(); };
+db("#dbRefresh").onclick = loadCollections;
+db("#dbQuery").oninput = (() => {
+  let timer;
+  return () => { clearTimeout(timer); timer = setTimeout(() => { dbState.page = 1; loadRecords(); }, 250); };
+})();
+db("#dbPrev").onclick = () => { if (dbState.page > 1) { dbState.page--; loadRecords(); } };
+db("#dbNext").onclick = () => { dbState.page++; loadRecords(); };
+db("#dbImportToggle").onclick = () => { db("#dbImportPanel").hidden = !db("#dbImportPanel").hidden; };
+db("#dbImport").onclick = importDbPayload;
+
+if (dbState.token) {
+  dbWorkspace(true);
+  if (document.querySelector("#database").classList.contains("active")) loadCollections();
+} else {
+  dbWorkspace(false);
+}
