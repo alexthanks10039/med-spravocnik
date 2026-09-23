@@ -4,7 +4,7 @@ Updated: 2026-09-23
 
 ## Current baseline
 
-Main: `33b3c329dde3bd3cd83689943a0c53889a220e22`
+Main: `6d7250226af6604546bd5263b197fc9625467962`
 
 ### Backend
 
@@ -22,7 +22,7 @@ Main: `33b3c329dde3bd3cd83689943a0c53889a220e22`
   - bulk status changes
   - audit log
 - Backend CI has PostgreSQL migration + seed + TypeScript check + smoke tests.
-- The latest verified Backend CI run is green: migrations, seed, TypeScript type-check and smoke tests all passed. The import path now uses a transaction callback, correct Prisma JSON null typing, PostgreSQL advisory locks for concurrent keys, and checksum-based no-op handling for identical retries.
+- The latest verified Backend CI run is green: migrations, seed, TypeScript type-check and all smoke tests passed. The import path now uses a transaction callback, correct Prisma JSON null typing, PostgreSQL advisory locks for concurrent keys, and checksum-based no-op handling for identical retries.
 
 ## Backlog
 
