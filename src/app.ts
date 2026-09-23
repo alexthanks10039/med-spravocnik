@@ -9,6 +9,7 @@ import { diseasesRouter } from './modules/diseases/diseases.routes.js';
 import { articlesRouter } from './modules/articles/articles.routes.js';
 import { calculatorsRouter } from './modules/calculators/calculators.routes.js';
 import { ragRouter } from './rag/rag.routes.js';
+import { dataRouter } from './modules/data/data.routes.js';
 import { errorMiddleware } from './shared/middleware/error.middleware.js';
 import { prisma } from './shared/prisma.js';
 import { env } from './config/env.js';
@@ -25,7 +26,7 @@ const allowedOrigins =
 
 app.disable('x-powered-by');
 app.use(cors({ origin: allowedOrigins }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(root));
 
 app.get('/api/health', (_req, res) =>
@@ -117,4 +118,5 @@ app.use('/api/diseases', diseasesRouter);
 app.use('/api/articles', articlesRouter);
 app.use('/api/calculators', calculatorsRouter);
 app.use('/api/rag', ragRouter);
+app.use('/api/data', dataRouter);
 app.use(errorMiddleware);
