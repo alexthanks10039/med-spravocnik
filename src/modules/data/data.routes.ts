@@ -270,7 +270,7 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
           for (const record of batch) {
             const checksum = crypto.createHash('sha256').update(JSON.stringify(record.payload)).digest('hex');
             const lockKey = collection.id + ':' + record.externalId;
-            await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
             const existing = await tx.dataRecord.findUnique({
               where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
               select: { id: true, version: true, payload: true, checksum: true },
