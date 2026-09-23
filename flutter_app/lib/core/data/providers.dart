@@ -57,41 +57,62 @@ final relatedItemsProvider =
       .toList(growable: false);
 });
 
-final notesProvider = NotifierProvider<NotesController, List<String>>(NotesController.new);
+class ClinicalNote {
+  const ClinicalNote({required this.text, this.sourceId});
 
-final historyIdsProvider =
-    NotifierProvider<HistoryController, List<String>>(HistoryController.new);
+  final String text;
+  final String? sourceId;
 
-final historyItemsProvider = FutureProvider.autoDispose<List<MedicalItem>>((ref) async {
-  final ids = ref.watch(historyIdsProvider);
-  if (ids.isEmpty) return const [];
+  Map<String, Object?> toJson() => {
+        'text': text,
+        'sourceId': sourceId,
+      };
 
-  final repository = ref.watch(medicalRepositoryProvider);
-  final found = await repository.getByIds(ids);
-  final byId = {for (final item in found) item.id: item};
-  return ids
-      .map((id) => byId[id])
-      .whereType<MedicalItem>()
-      .toList(growable: false);
-});
+  static ClinicalNote? fromJson(Object? value) {
+    if (value is! Map<String, Object?>) return null;
+    final text = value['text'];
+    if (text is! String || text.trim().isEmpty) return null;
+    final sourceId = value['sourceId'];
+    return ClinicalNote(
+      text: text.trim(),
+      sourceId: sourceId is String && sourceId.trim().isNotEmpty
+          ? sourceId.trim()
+          : null,
+    );
+  }
+}
 
-class NotesController extends Notifier<List<String>> {
-  static const _storageKey = 'clinical_notes';
+final notesProvider = NotifierProvider<NotesController, List<ClinicalNote>>(
+  NotesController.new,
+);
+
+class NotesController extends Notifier<List<ClinicalNote>> {
+  static const _storageKey = 'clinical_notes_v2';
+  static const _legacyStorageKey = 'clinical_notes';
   bool _disposed = false;
   int _revision = 0;
   Future<void> _saveQueue = Future<void>.value();
 
   @override
-  List<String> build() {
+  List<ClinicalNote> build() {
     ref.onDispose(() => _disposed = true);
     _load();
-    return <String>[];
+    return <ClinicalNote>[];
   }
 
-  void add(String note) {
+  void add(String note, {String? sourceId}) {
     final value = note.trim();
     if (value.isEmpty) return;
-    final next = [value, ...state];
+    final normalizedSourceId = sourceId?.trim();
+    final next = [
+      ClinicalNote(
+        text: value,
+        sourceId: normalizedSourceId == null || normalizedSourceId.isEmpty
+            ? null
+            : normalizedSourceId,
+      ),
+      ...state,
+    ];
     _revision++;
     state = next;
     _save(next);
@@ -109,20 +130,48 @@ class NotesController extends Notifier<List<String>> {
     final revision = _revision;
     final preferences = await SharedPreferences.getInstance();
     if (_disposed || revision != _revision) return;
-    state = preferences.getStringList(_storageKey) ?? <String>[];
+
+    final raw = preferences.getString(_storageKey);
+    if (raw != null) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List<Object?>) {
+          state = decoded
+              .map(ClinicalNote.fromJson)
+              .whereType<ClinicalNote>()
+              .toList(growable: false);
+          return;
+        }
+      } catch (_) {
+        // Fall through to the legacy string-list format.
+      }
+    }
+
+    final legacy = preferences.getStringList(_legacyStorageKey) ?? const <String>[];
+    state = legacy
+        .map((text) => ClinicalNote(text: text))
+        .toList(growable: false);
+    if (legacy.isNotEmpty) {
+      _save(state);
+    }
   }
 
-  void _save(List<String> notes) {
-    final snapshot = List<String>.unmodifiable(notes);
+  void _save(List<ClinicalNote> notes) {
+    final snapshot = List<ClinicalNote>.unmodifiable(notes);
     _saveQueue = _saveQueue.then((_) async {
       if (_disposed) return;
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setStringList(_storageKey, snapshot);
+      await preferences.setString(
+        _storageKey,
+        jsonEncode(snapshot.map((note) => note.toJson()).toList()),
+      );
     });
   }
 
 }
 
+final historyIdsProvider =
+    NotifierProvider<HistoryController, List<String>>(HistoryController.new);
 class HistoryController extends Notifier<List<String>> {
   static const _storageKey = 'clinical_history_v1';
   bool _disposed = false;
