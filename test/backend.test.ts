@@ -191,6 +191,18 @@ test('Enterprise Data Store preserves MCP payloads and versions', async () => {
   });
   assert.equal(listed.items[0].version, 1);
 
+  const repeatImport = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/import', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ filename: 'mcp.json', data: firstPayload }),
+  });
+  assert.equal(repeatImport.status, 201);
+  const repeatDetail = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records/' + listed.items[0].id, {
+    headers: { authorization: 'Bearer ' + token },
+  });
+  const repeatCurrent = await repeatDetail.json() as { version: number };
+  assert.equal(repeatCurrent.version, 1);
+
   const secondPayload = {
     data: [{
       id: 'mcp-1',
