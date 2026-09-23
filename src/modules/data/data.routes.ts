@@ -227,6 +227,25 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+dataRouter.get('/collections/:collectionId/export', async (req, res, next) => {
+  try {
+    const collection = await prisma.dataCollection.findUnique({ where: { id: req.params.collectionId } });
+    if (!collection) throw new AppError('Data collection not found', 404);
+
+    const records = await prisma.dataRecord.findMany({
+      where: { collectionId: collection.id, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+      select: { externalId: true, payload: true },
+    });
+
+    res.json({
+      collection: { id: collection.id, key: collection.key, name: collection.name },
+      count: records.length,
+      items: records.map((record) => record.payload),
+    });
+  } catch (error) { next(error); }
+});
+
 dataRouter.get('/collections/:collectionId/imports', async (req, res, next) => {
   try {
     const imports = await prisma.dataImport.findMany({
