@@ -68,3 +68,73 @@ model Article {
   @@index([category])
   @@index([isPublished, updatedAt])
 }
+
+
+enum DataRecordStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model DataCollection {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  schema      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  records     DataRecord[]
+  imports     DataImport[]
+}
+
+model DataRecord {
+  id           String            @id @default(cuid())
+  collectionId String
+  externalId   String
+  title        String?
+  recordType   String?
+  searchText   String?
+  payload      Json
+  status       DataRecordStatus  @default(ACTIVE)
+  version      Int               @default(1)
+  sourceFile   String?
+  checksum     String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  collection   DataCollection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, externalId])
+  @@index([collectionId, status, updatedAt])
+  @@index([collectionId, title])
+  @@index([collectionId, recordType])
+}
+
+model DataImport {
+  id           String         @id @default(cuid())
+  collectionId String
+  filename     String?
+  format       String
+  status       String
+  total        Int            @default(0)
+  imported     Int            @default(0)
+  rejected     Int            @default(0)
+  errors       Json?
+  startedAt    DateTime       @default(now())
+  finishedAt   DateTime?
+  collection   DataCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId, startedAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entity     String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId, createdAt])
+}
