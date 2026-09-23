@@ -551,3 +551,11 @@ button:hover {
 .empty-cell{text-align:center!important;color:#64748b;padding:32px!important}
 .pager{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px}
 .json-view{margin:0;max-height:650px;overflow:auto;background:#0f172a;color:#e2e8f0;border-radius:14px;padding:18px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+
+.db-upload-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.7fr);gap:10px;margin-bottom:10px}
+.db-preview{margin:12px 0;padding:14px 16px;border-radius:14px;background:#0f172a;color:#e2e8f0;font-size:13px;line-height:1.5;overflow:auto}
+.db-preview pre{margin:10px 0 0;max-height:240px;white-space:pre-wrap;word-break:break-word}
+.db-toolbar select{max-width:180px}
+.db-toolbar button,.db-login button,.nested button{padding:0 16px;min-height:48px;background:#173832;color:#fff}
+.db-toolbar button:hover,.db-login button:hover,.nested button:hover{background:#24564b}
+@media (max-width:860px){.db-upload-row{grid-template-columns:1fr}.db-toolbar select{max-width:none}}
