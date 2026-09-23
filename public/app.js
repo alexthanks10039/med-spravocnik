@@ -384,21 +384,6 @@ async function createDbCollection() {
   }
 }
 
-async function importDbPayload() {
-  const meta = db("#dbImportMeta");
-  meta.textContent = "Импортируем...";
-  try {
-    const payload = JSON.parse(db("#dbPayload").value);
-    const result = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/import`, {
-      method: "POST",
-      body: JSON.stringify({ filename: db("#dbFilename").value.trim() || undefined, data: payload })
-    });
-    meta.textContent = `Готово: ${result.imported}/${result.total}, ошибок: ${result.rejected}.`;
-    await loadCollections();
-  } catch (error) {
-    meta.textContent = error.message || "Ошибка импорта. Проверьте JSON.";
-  }
-}
 
 db("#dbLoginButton").onclick = dbLogin;
 db("#dbPassword").onkeydown = (event) => { if (event.key === "Enter") dbLogin(); };
