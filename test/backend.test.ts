@@ -158,14 +158,14 @@ test('Enterprise Data Store preserves MCP payloads and versions', async () => {
   const collection = await collectionResponse.json() as { id: string };
 
   const firstPayload = {
-    data: {
+    content: [{
       type: 'text',
       text: JSON.stringify({
         id: 'mcp-1',
         name: 'Гипертензия',
         nested: { values: [1, 2, 3] },
       }),
-    },
+    }],
   };
 
   const importOne = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/import', {
