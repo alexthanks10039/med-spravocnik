@@ -1,3 +1,5 @@
+import 'package:doctor_reference/core/data/medical_repository.dart';
+import 'package:doctor_reference/core/data/providers.dart';
 import 'package:doctor_reference/app/app.dart';
 import 'package:doctor_reference/app/router.dart';
 import 'package:flutter/material.dart';
@@ -37,4 +39,26 @@ void main() {
     expect(find.text('Результат'), findsOneWidget);
     expect(find.textContaining('кг/м²'), findsOneWidget);
   });
+  testWidgets('medical item card opens the concrete detail route', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          medicalRepositoryProvider.overrideWithValue(OfflineMedicalRepository()),
+        ],
+        child: const DoctorReferenceApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    appRouter.go('/diseases');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Артериальная гипертензия'), findsOneWidget);
+    await tester.tap(find.text('Артериальная гипертензия'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Артериальная гипертензия'), findsOneWidget);
+    expect(find.text('Диагностика'), findsOneWidget);
+  });
+
 }
