@@ -32,6 +32,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final query = ref.watch(searchQueryProvider);
     final results = ref.watch(searchResultsProvider);
     return ScreenFrame(
       title: 'Глобальный поиск',
@@ -40,7 +41,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         children: [
           ReferenceSearchPanel(
             controller: controller,
-            query: ref.watch(searchQueryProvider),
+            query: query,
             autofocus: true,
             shortcuts: const [
               SearchShortcut('Гипертензия', value: 'гипертензия'),
@@ -67,7 +68,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               onAction: () => ref.invalidate(searchResultsProvider),
             ),
             data: (items) => items.isEmpty
-                ? const StatePanel.empty()
+                ? StatePanel(
+                    icon: Icons.search_off_rounded,
+                    title: query.trim().isEmpty
+                        ? 'Начните поиск'
+                        : 'Ничего не найдено',
+                    message: query.trim().isEmpty
+                        ? 'Введите заболевание, препарат или название калькулятора'
+                        : 'Попробуйте изменить запрос или очистить поиск',
+                    actionLabel: query.trim().isEmpty ? null : 'Очистить поиск',
+                    onAction: query.trim().isEmpty
+                        ? null
+                        : () {
+                            controller.clear();
+                            ref.read(searchQueryProvider.notifier).update('');
+                          },
+                  )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
