@@ -160,3 +160,28 @@
 ### `GET /rag?q=api&space=development`
 
 `space` принимает `commercial`, `development` или `content`. Без фильтра поиск выполняется по всем массивам. Пустой `q` возвращает все документы выбранного пространства.
+
+
+## Enterprise Data Store
+
+Все маршруты ниже требуют ADMIN.
+
+GET /data/collections — коллекции с количеством записей и импортов.
+
+POST /data/collections — создание коллекции. Тело: {"key":"medical-mcp","name":"Medical MCP","description":"Импортированные медицинские записи"}.
+
+GET /data/collections/:collectionId/records?page=1&pageSize=50&q=гипертензия&type=disease — постраничная выдача. Поиск выполняется по externalId, title и нормализованному searchText.
+
+GET /data/collections/:collectionId/records/:recordId — полная запись вместе с исходным JSON в payload.
+
+POST /data/collections/:collectionId/import — импорт массива JSON/MCP или объекта-обёртки. Поддерживаются items, results, records, data, content, documents.
+
+Пример тела: {"filename":"medical.json","data":[{"id":"123","name":"..."},{"id":"124","name":"..."}]}.
+
+Стабильный externalId берётся из id, externalId, uuid, key или slug. Если идентификатора нет, создаётся SHA-256 от JSON-записи. Исходная структура сохраняется в payload без flattening.
+
+Импорт идемпотентный по (collectionId, externalId): повторная загрузка обновляет запись и увеличивает version. Также сохраняются sourceFile и checksum.
+
+GET /data/collections/:collectionId/imports — история последних 50 импортов.
+
+Почему это решает проблему MCP-файлов: backend разделяет внешний идентификатор, заголовок, тип, поисковое текстовое представление и исходный JSON. UI показывает таблицу, поиск, пагинацию и JSON Inspector, поэтому вложенная структура не теряется и не ломает отображение.
