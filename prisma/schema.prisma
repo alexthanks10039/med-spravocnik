@@ -102,6 +102,7 @@ model DataRecord {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   collection   DataCollection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  versions     DataRecordVersion[]
 
   @@unique([collectionId, externalId])
   @@index([collectionId, status, updatedAt])
@@ -138,3 +139,19 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entity, entityId, createdAt])
 }
+
+
+model DataRecordVersion {
+  id         String   @id @default(cuid())
+  recordId   String
+  version    Int
+  payload    Json
+  checksum   String?
+  createdAt  DateTime @default(now())
+  createdBy  String?
+  record     DataRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+
+  @@unique([recordId, version])
+  @@index([recordId, createdAt])
+}
+
