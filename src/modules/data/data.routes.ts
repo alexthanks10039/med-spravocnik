@@ -293,7 +293,8 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
               checksum: crypto.createHash('sha256').update(JSON.stringify(record.payload)).digest('hex'),
               sourceFile: filename,
             },
-          })),
+          });
+          }),
         );
         imported += batch.length;
       } catch (error) {
