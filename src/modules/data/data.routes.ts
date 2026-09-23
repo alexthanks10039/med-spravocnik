@@ -105,7 +105,7 @@ function detectFormat(input: unknown): string {
   return 'json-object';
 }
 
-function toPrismaJson(value: unknown): Prisma.InputJsonValue | Prisma.JsonNull {
+function toPrismaJson(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
   return value === null ? Prisma.JsonNull : value as Prisma.InputJsonValue;
 }
 
