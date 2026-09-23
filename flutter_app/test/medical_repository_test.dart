@@ -81,7 +81,7 @@ class _UnorderedRemoteRepository implements MedicalRepository {
 }
 
 void main() {
-  const repository = OfflineMedicalRepository();
+  final repository = OfflineMedicalRepository();
 
   test('offline search includes section content', () async {
     final results = await repository.search('красные флаги');
