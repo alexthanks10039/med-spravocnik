@@ -17,6 +17,9 @@ navButtons.forEach((button) => {
     if (button.dataset.view === "rag") {
       loadRag();
     }
+    if (button.dataset.view === "database" && dbState.token) {
+      loadCollections();
+    }
   };
 });
 
@@ -297,6 +300,23 @@ async function openRecord(recordId) {
   }
 }
 
+
+async function createDbCollection() {
+  const key = prompt("Ключ коллекции (латиница, цифры, _ или -):", "medical-mcp");
+  if (!key) return;
+  const name = prompt("Название коллекции:", "Medical MCP");
+  if (!name) return;
+  try {
+    await dbFetch("/api/data/collections", {
+      method: "POST",
+      body: JSON.stringify({ key, name })
+    });
+    await loadCollections();
+  } catch (error) {
+    alert(error.message || "Не удалось создать коллекцию.");
+  }
+}
+
 async function importDbPayload() {
   const meta = db("#dbImportMeta");
   meta.textContent = "Импортируем...";
@@ -325,6 +345,7 @@ db("#dbPrev").onclick = () => { if (dbState.page > 1) { dbState.page--; loadReco
 db("#dbNext").onclick = () => { dbState.page++; loadRecords(); };
 db("#dbImportToggle").onclick = () => { db("#dbImportPanel").hidden = !db("#dbImportPanel").hidden; };
 db("#dbImport").onclick = importDbPayload;
+db("#dbCreateCollection").onclick = createDbCollection;
 
 if (dbState.token) {
   dbWorkspace(true);
