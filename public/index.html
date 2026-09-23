@@ -24,6 +24,7 @@
         <button class="active" data-view="overview">Обзор</button>
         <button data-view="rag">RAG-библиотека</button>
         <button data-view="calculator">Калькуляторы</button>
+        <button data-view="database">База данных</button>
       </nav>
 
       <section class="side-card">
@@ -146,6 +147,78 @@
             </select>
           </div>
           <div id="ragResults" class="rag-grid"></div>
+        </div>
+      </section>
+
+
+
+      <section id="database" class="view">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Enterprise Data Store</p>
+              <h2>База данных</h2>
+              <p class="meta">Нормализованный слой для больших JSON/MCP-массивов: коллекции, записи, версии, импорт и аудит.</p>
+            </div>
+          </div>
+
+          <div id="dbLogin" class="db-login">
+            <h3>Вход администратора</h3>
+            <div class="toolbar">
+              <input id="dbEmail" type="email" placeholder="admin@med.local" autocomplete="username">
+              <input id="dbPassword" type="password" placeholder="Пароль" autocomplete="current-password">
+              <button id="dbLoginButton">Войти</button>
+            </div>
+            <p id="dbLoginMeta" class="meta">Требуется роль ADMIN.</p>
+          </div>
+
+          <div id="dbWorkspace" hidden>
+            <div class="db-toolbar toolbar">
+              <select id="dbCollection"></select>
+              <input id="dbQuery" placeholder="Поиск по id, названию или содержимому">
+              <button id="dbRefresh">Обновить</button>
+              <button id="dbImportToggle">Импорт JSON/MCP</button>
+            </div>
+
+            <div id="dbImportPanel" class="panel nested" hidden>
+              <div class="section-head">
+                <div>
+                  <p class="section-kicker">Импорт</p>
+                  <h3>Массив MCP/JSON без потери структуры</h3>
+                </div>
+              </div>
+              <input id="dbFilename" placeholder="Имя источника, например medical.json">
+              <textarea id="dbPayload" rows="12" placeholder='Вставьте JSON-массив или объект MCP. Например: {"items":[{"id":"1","name":"..."}]}'></textarea>
+              <div class="toolbar">
+                <button id="dbImport">Импортировать</button>
+                <span id="dbImportMeta" class="meta"></span>
+              </div>
+            </div>
+
+            <div class="db-stats" id="dbStats"></div>
+            <div class="db-table-wrap">
+              <table class="db-table">
+                <thead><tr><th>ID</th><th>Название</th><th>Тип</th><th>Версия</th><th>Обновлено</th><th></th></tr></thead>
+                <tbody id="dbRows"></tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <button id="dbPrev">←</button>
+              <span id="dbPage">Страница 1</span>
+              <button id="dbNext">→</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="dbRecordPanel" class="panel" hidden>
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Record Inspector</p>
+              <h2 id="dbRecordTitle">Запись</h2>
+            </div>
+            <span id="dbRecordMeta" class="meta"></span>
+          </div>
+          <pre id="dbRecordJson" class="json-view"></pre>
         </div>
       </section>
 
