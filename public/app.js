@@ -303,16 +303,68 @@ async function openRecord(recordId) {
 
 async function exportDbCollection() {
   try {
-    const data = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/export`);
-    const blob = new Blob([JSON.stringify(data.items, null, 2)], { type: "application/json;charset=utf-8" });
+    const format = db("#dbExportFormat").value;
+    const response = await fetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/export?format=${encodeURIComponent(format)}`, {
+      headers: dbHeaders()
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Export failed: ${response.status}`);
+    }
+    const isNdjson = format === "ndjson";
+    const body = await response.text();
+    const blob = new Blob([body], { type: isNdjson ? "application/x-ndjson;charset=utf-8" : "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${data.collection.key}-export.json`;
+    link.download = `${dbState.collectionId}-export.${isNdjson ? "ndjson" : "json"}`;
     link.click();
     URL.revokeObjectURL(url);
   } catch (error) {
     alert(error.message || "Не удалось экспортировать коллекцию.");
+  }
+}
+
+function detectClientPayload(raw, filename = "") {
+  const text = raw.trim();
+  if (!text) throw new Error("Файл пустой.");
+  if (/\.(jsonl|ndjson)$/i.test(filename) || (!text.startsWith("[") && text.includes("\n") && text.split("\n").filter(Boolean).every((line) => line.trim().startsWith("{")))) {
+    const items = text.split("\n").map((line) => line.trim()).filter(Boolean).map((line, index) => {
+      try { return JSON.parse(line); } catch { throw new Error(`Ошибка JSON в строке ${index + 1}`); }
+    });
+    return items;
+  }
+  try { return JSON.parse(text); } catch { throw new Error("Некорректный JSON/NDJSON."); }
+}
+
+function showImportPreview() {
+  const preview = db("#dbPreview");
+  try {
+    const payload = detectClientPayload(db("#dbPayload").value, db("#dbFilename").value);
+    const sample = Array.isArray(payload) ? payload.slice(0, 3) : payload;
+    const count = Array.isArray(payload) ? payload.length : 1;
+    preview.hidden = false;
+    preview.innerHTML = `<strong>Структура распознана</strong><br>Записей: ${count}<br><pre>${escapeHtml(JSON.stringify(sample, null, 2))}</pre>`;
+  } catch (error) {
+    preview.hidden = false;
+    preview.textContent = error.message || "Не удалось распознать структуру.";
+  }
+}
+
+async function importDbPayload() {
+  const meta = db("#dbImportMeta");
+  meta.textContent = "Импортируем...";
+  try {
+    const filename = db("#dbFilename").value.trim() || db("#dbFile").files[0]?.name || undefined;
+    const payload = detectClientPayload(db("#dbPayload").value, filename || "");
+    const result = await dbFetch(`/api/data/collections/${encodeURIComponent(dbState.collectionId)}/import`, {
+      method: "POST",
+      body: JSON.stringify({ filename, data: payload })
+    });
+    meta.textContent = `Готово: ${result.imported}/${result.total}, ошибок: ${result.rejected}.`;
+    await loadCollections();
+  } catch (error) {
+    meta.textContent = error.message || "Ошибка импорта. Проверьте JSON.";
   }
 }
 
@@ -360,6 +412,18 @@ db("#dbPrev").onclick = () => { if (dbState.page > 1) { dbState.page--; loadReco
 db("#dbNext").onclick = () => { dbState.page++; loadRecords(); };
 db("#dbImportToggle").onclick = () => { db("#dbImportPanel").hidden = !db("#dbImportPanel").hidden; };\ndb("#dbExport").onclick = exportDbCollection;
 db("#dbImport").onclick = importDbPayload;
+db("#dbPreviewButton").onclick = showImportPreview;
+db("#dbFile").onchange = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  db("#dbFilename").value = file.name;
+  try {
+    db("#dbPayload").value = await file.text();
+    showImportPreview();
+  } catch {
+    db("#dbImportMeta").textContent = "Не удалось прочитать файл.";
+  }
+};
 db("#dbCreateCollection").onclick = createDbCollection;
 
 if (dbState.token) {
