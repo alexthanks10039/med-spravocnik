@@ -184,6 +184,49 @@ dataRouter.get('/collections/:collectionId/records', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+dataRouter.get('/collections/:collectionId/records/:recordId/versions', async (req, res, next) => {
+  try {
+    const record = await prisma.dataRecord.findFirst({ where: { id: req.params.recordId, collectionId: req.params.collectionId }, select: { id: true, version: true } });
+    if (!record) throw new AppError('Data record not found', 404);
+    const versions = await prisma.dataRecordVersion.findMany({ where: { recordId: record.id }, orderBy: { version: 'desc' } });
+    res.json({ currentVersion: record.version, items: versions });
+  } catch (error) { next(error); }
+});
+
+dataRouter.post('/collections/:collectionId/records/:recordId/rollback/:version', async (req, res, next) => {
+  try {
+    const record = await prisma.dataRecord.findFirst({ where: { id: req.params.recordId, collectionId: req.params.collectionId } });
+    if (!record) throw new AppError('Data record not found', 404);
+    const version = Number(req.params.version);
+    if (!Number.isInteger(version) || version < 1) throw new AppError('Invalid version', 400);
+    const snapshot = version === record.version
+      ? { payload: record.payload, checksum: record.checksum }
+      : await prisma.dataRecordVersion.findUnique({ where: { recordId_version: { recordId: record.id, version } } });
+    if (!snapshot) throw new AppError('Version not found', 404);
+    const nextVersion = record.version + 1;
+    const payload = snapshot.payload as Record<string, unknown>;
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.dataRecordVersion.create({ data: { recordId: record.id, version: record.version, payload: record.payload, checksum: record.checksum, createdBy: req.user!.userId } });
+      return tx.dataRecord.update({
+        where: { id: record.id },
+        data: { payload: snapshot.payload, checksum: snapshot.checksum, version: nextVersion, searchText: textValue(payload).slice(0,100000), title: pickTitle(payload), recordType: typeof payload.type === 'string' ? payload.type.slice(0,100) : undefined },
+      });
+    });
+    await prisma.auditLog.create({ data: { userId: req.user!.userId, action: 'ROLLBACK', entity: 'DataRecord', entityId: record.id, metadata: { fromVersion: record.version, toVersion: version, createdVersion: nextVersion } } });
+    res.json(updated);
+  } catch (error) { next(error); }
+});
+
+dataRouter.post('/collections/:collectionId/records/bulk-status', async (req, res, next) => {
+  try {
+    const ids = z.array(z.string().min(1)).max(1000).parse(req.body?.ids);
+    const status = z.enum(['ACTIVE', 'ARCHIVED']).parse(req.body?.status);
+    const result = await prisma.dataRecord.updateMany({ where: { collectionId: req.params.collectionId, id: { in: ids } }, data: { status } });
+    await prisma.auditLog.create({ data: { userId: req.user!.userId, action: 'BULK_STATUS', entity: 'DataRecord', entityId: req.params.collectionId, metadata: { ids, status, count: result.count } } });
+    res.json({ count: result.count, status });
+  } catch (error) { next(error); }
+});
+
 dataRouter.get('/collections/:collectionId/records/:recordId', async (req, res, next) => {
   try {
     const record = await prisma.dataRecord.findFirst({
@@ -217,7 +260,22 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
       const batch = source.slice(offset, offset + 100).map((item, index) => normalizeRecord(item, offset + index));
       try {
         await prisma.$transaction(
-          batch.map((record) => prisma.dataRecord.upsert({
+          batch.map(async (record) => {
+            const existing = await prisma.dataRecord.findUnique({
+              where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
+            });
+            if (existing) {
+              await prisma.dataRecordVersion.create({
+                data: {
+                  recordId: existing.id,
+                  version: existing.version,
+                  payload: existing.payload,
+                  checksum: existing.checksum,
+                  createdBy: req.user!.userId,
+                },
+              });
+            }
+            return prisma.dataRecord.upsert({
             where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
             update: {
               title: record.title,
