@@ -157,7 +157,7 @@ class MedicalItemCard extends StatelessWidget {
                   return;
                 }
               }
-              context.push('/detail/\${item.id}');
+              context.push('/detail/${item.id}');
             },
         child: Padding(
           padding: const EdgeInsets.all(UiTokens.cardPadding),
