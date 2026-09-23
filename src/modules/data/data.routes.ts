@@ -51,16 +51,57 @@ function pickExternalId(record: Record<string, unknown>, index: number): string 
   return crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex').slice(0, 32) || String(index + 1);
 }
 
-function unwrapMcpPayload(input: unknown): unknown[] {
-  if (Array.isArray(input)) return input;
-  if (!input || typeof input !== 'object') return [input];
+function parseEmbeddedJson(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  const text = value.trim();
+  if (!text || (!text.startsWith('{') && !text.startsWith('['))) return value;
+  try { return JSON.parse(text); } catch { return value; }
+}
 
-  const object = input as Record<string, unknown>;
-  for (const key of ['items', 'results', 'records', 'data', 'content', 'documents']) {
-    if (Array.isArray(object[key])) return object[key];
+function unwrapMcpPayload(input: unknown): unknown[] {
+  const root = parseEmbeddedJson(input);
+  if (Array.isArray(root)) {
+    const flattened: unknown[] = [];
+    for (const item of root) {
+      const parsed = parseEmbeddedJson(item);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const obj = parsed as Record<string, unknown>;
+        if (obj.type === 'text' && 'text' in obj) {
+          const nested = parseEmbeddedJson(obj.text);
+          if (Array.isArray(nested)) flattened.push(...nested);
+          else if (nested && typeof nested === 'object') flattened.push(nested);
+          else flattened.push(obj);
+          continue;
+        }
+      }
+      flattened.push(parsed);
+    }
+    return flattened;
+  }
+  if (!root || typeof root !== 'object') return [root];
+
+  const object = root as Record<string, unknown>;
+  for (const key of ['items', 'results', 'records', 'data', 'documents', 'resources']) {
+    const candidate = parseEmbeddedJson(object[key]);
+    if (Array.isArray(candidate)) return unwrapMcpPayload(candidate);
   }
 
-  return [input];
+  if (object.type === 'text' && 'text' in object) {
+    const nested = parseEmbeddedJson(object.text);
+    if (nested !== object) return unwrapMcpPayload(nested);
+  }
+
+  return [root];
+}
+
+function detectFormat(input: unknown): string {
+  if (Array.isArray(input)) return 'json-array';
+  if (input && typeof input === 'object') {
+    const object = input as Record<string, unknown>;
+    if (Array.isArray(object.content) || object.type === 'text') return 'mcp-content';
+    if (Array.isArray(object.items) || Array.isArray(object.results) || Array.isArray(object.records)) return 'json-envelope';
+  }
+  return 'json-object';
 }
 
 function normalizeRecord(value: unknown, index: number) {
@@ -161,10 +202,11 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
     const filename = typeof req.body?.filename === 'string' ? req.body.filename.slice(0, 500) : undefined;
     const raw = req.body?.data ?? req.body?.payload ?? req.body;
     const source = unwrapMcpPayload(raw);
+    const format = detectFormat(raw);
     if (source.length > 10_000) throw new AppError('Import is limited to 10,000 records per batch', 413);
 
     const job = await prisma.dataImport.create({
-      data: { collectionId: collection.id, filename, format: 'json', status: 'RUNNING', total: source.length },
+      data: { collectionId: collection.id, filename, format, status: 'RUNNING', total: source.length },
     });
 
     let imported = 0;
@@ -238,11 +280,22 @@ dataRouter.get('/collections/:collectionId/export', async (req, res, next) => {
       select: { externalId: true, payload: true },
     });
 
-    res.json({
-      collection: { id: collection.id, key: collection.key, name: collection.name },
-      count: records.length,
-      items: records.map((record) => record.payload),
-    });
+    const items = records.map((record) => record.payload);
+    const format = String(req.query.format ?? 'array');
+    if (format === 'ndjson') {
+      res.type('application/x-ndjson').send(items.map((item) => JSON.stringify(item)).join('\n'));
+      return;
+    }
+    if (format === 'envelope') {
+      res.json({
+        type: 'collection',
+        collection: { id: collection.id, key: collection.key, name: collection.name },
+        count: items.length,
+        items,
+      });
+      return;
+    }
+    res.json(items);
   } catch (error) { next(error); }
 });
 
