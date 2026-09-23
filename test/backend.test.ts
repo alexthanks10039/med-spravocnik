@@ -138,3 +138,116 @@ test('calculator validation returns HTTP 400', async () => {
   });
   assert.equal(response.status, 400);
 });
+
+test('Enterprise Data Store preserves MCP payloads and versions', async () => {
+  const login = await fetch(baseUrl + '/api/auth/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'admin@med.local', password: 'Admin123!' }),
+  });
+  assert.equal(login.status, 200);
+  const { token } = await login.json() as { token: string };
+  const headers = { 'content-type': 'application/json', authorization: 'Bearer ' + token };
+
+  const collectionResponse = await fetch(baseUrl + '/api/data/collections', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ key: 'ci-mcp', name: 'CI MCP' }),
+  });
+  assert.equal(collectionResponse.status, 201);
+  const collection = await collectionResponse.json() as { id: string };
+
+  const firstPayload = {
+    data: {
+      type: 'text',
+      text: JSON.stringify({
+        id: 'mcp-1',
+        name: 'Гипертензия',
+        nested: { values: [1, 2, 3] },
+      }),
+    },
+  };
+
+  const importOne = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/import', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ filename: 'mcp.json', data: firstPayload }),
+  });
+  assert.equal(importOne.status, 201);
+  const importOneBody = await importOne.json() as { imported: number; rejected: number };
+  assert.equal(importOneBody.imported, 1);
+  assert.equal(importOneBody.rejected, 0);
+
+  const list = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records', {
+    headers: { authorization: 'Bearer ' + token },
+  });
+  assert.equal(list.status, 200);
+  const listed = await list.json() as { items: Array<{ id: string; payload: Record<string, unknown>; version: number }> };
+  assert.equal(listed.total, 1);
+  assert.deepEqual(listed.items[0].payload, {
+    id: 'mcp-1',
+    name: 'Гипертензия',
+    nested: { values: [1, 2, 3] },
+  });
+  assert.equal(listed.items[0].version, 1);
+
+  const secondPayload = {
+    data: [{
+      id: 'mcp-1',
+      name: 'Гипертензия обновлена',
+      nested: { values: [4, 5] },
+    }],
+  };
+  const importTwo = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/import', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(secondPayload),
+  });
+  assert.equal(importTwo.status, 201);
+
+  const detail = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records/' + listed.items[0].id, {
+    headers: { authorization: 'Bearer ' + token },
+  });
+  const current = await detail.json() as { payload: Record<string, unknown>; version: number };
+  assert.equal(current.version, 2);
+  assert.equal((current.payload.name as string), 'Гипертензия обновлена');
+
+  const versionsResponse = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records/' + listed.items[0].id + '/versions', {
+    headers: { authorization: 'Bearer ' + token },
+  });
+  assert.equal(versionsResponse.status, 200);
+  const versions = await versionsResponse.json() as { currentVersion: number; items: Array<{ version: number; payload: Record<string, unknown> }> };
+  assert.equal(versions.currentVersion, 2);
+  assert.equal(versions.items.some((item) => item.version === 1), true);
+
+  const rollback = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records/' + listed.items[0].id + '/rollback/1', {
+    method: 'POST',
+    headers,
+  });
+  assert.equal(rollback.status, 200);
+  const rolledBack = await rollback.json() as { payload: Record<string, unknown>; version: number };
+  assert.equal(rolledBack.version, 3);
+  assert.equal((rolledBack.payload.name as string), 'Гипертензия');
+
+  const status = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records/bulk-status', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ ids: [listed.items[0].id], status: 'ARCHIVED' }),
+  });
+  assert.equal(status.status, 200);
+
+  const archived = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records?status=ARCHIVED', {
+    headers: { authorization: 'Bearer ' + token },
+  });
+  const archivedBody = await archived.json() as { total: number };
+  assert.equal(archivedBody.total, 1);
+
+  const exported = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/export?format=envelope', {
+    headers: { authorization: 'Bearer ' + token },
+  });
+  assert.equal(exported.status, 200);
+  const envelope = await exported.json() as { type: string; count: number; items: unknown[] };
+  assert.equal(envelope.type, 'collection');
+  assert.equal(envelope.count, 0);
+  assert.deepEqual(envelope.items, []);
+});
