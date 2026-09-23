@@ -242,6 +242,9 @@ test('Enterprise Data Store preserves MCP payloads and versions', async () => {
   const archivedBody = await archived.json() as { total: number };
   assert.equal(archivedBody.total, 1);
 
+  const unauthorized = await fetch(baseUrl + '/api/data/collections');
+  assert.equal(unauthorized.status, 401);
+
   const exported = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/export?format=envelope', {
     headers: { authorization: 'Bearer ' + token },
   });
