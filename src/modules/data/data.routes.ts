@@ -269,10 +269,15 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
         await prisma.$transaction(async (tx) => {
           for (const record of batch) {
             const checksum = crypto.createHash('sha256').update(JSON.stringify(record.payload)).digest('hex');
+            const lockKey = collection.id + ':' + record.externalId;
+            await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
             const existing = await tx.dataRecord.findUnique({
               where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
               select: { id: true, version: true, payload: true, checksum: true },
             });
+            if (existing?.checksum === checksum) {
+              continue;
+            }
             if (existing) {
               await tx.dataRecordVersion.create({
                 data: {
