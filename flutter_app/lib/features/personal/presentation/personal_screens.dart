@@ -131,6 +131,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     final value = controller.text.trim();
     if (value.isEmpty) return;
 
+    final sourceId = GoRouterState.of(context).uri.queryParameters['source'];
     ref.read(notesProvider.notifier).add(value, sourceId: sourceId);
     controller.clear();
     FocusScope.of(context).unfocus();
