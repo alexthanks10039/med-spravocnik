@@ -1,3 +1,4 @@
+import 'package:doctor_reference/core/data/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -144,4 +145,16 @@ void main() {
 
     expect(results.first.id, 'article-2');
   });
+  test('clinical note round-trip preserves the linked source', () {
+    const note = ClinicalNote(
+      text: 'Контролировать АД через неделю',
+      sourceId: 'hypertension',
+    );
+
+    final restored = ClinicalNote.fromJson(note.toJson());
+
+    expect(restored?.text, note.text);
+    expect(restored?.sourceId, note.sourceId);
+  });
+
 }
