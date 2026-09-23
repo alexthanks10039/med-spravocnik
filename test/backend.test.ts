@@ -175,7 +175,7 @@ test('Enterprise Data Store preserves MCP payloads and versions', async () => {
   });
   assert.equal(importOne.status, 201);
   const importOneBody = await importOne.json() as { imported: number; rejected: number };
-  assert.equal(importOneBody.imported, 1);
+  assert.equal(importOneBody.imported, 1, JSON.stringify(importOneBody));
   assert.equal(importOneBody.rejected, 0);
 
   const list = await fetch(baseUrl + '/api/data/collections/' + collection.id + '/records', {
