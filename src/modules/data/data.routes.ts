@@ -104,6 +104,10 @@ function detectFormat(input: unknown): string {
   return 'json-object';
 }
 
+function toPrismaJson(value: unknown): Prisma.InputJsonValue | Prisma.JsonNull {
+  return value === null ? Prisma.JsonNull : value as Prisma.InputJsonValue;
+}
+
 function normalizeRecord(value: unknown, index: number) {
   const payload: Record<string, unknown> =
     value && typeof value === 'object' && !Array.isArray(value)
@@ -115,7 +119,7 @@ function normalizeRecord(value: unknown, index: number) {
     title: pickTitle(payload),
     recordType: typeof payload.type === 'string' ? payload.type.slice(0, 100) : undefined,
     searchText: textValue(payload).slice(0, 100_000),
-    payload: payload as Prisma.InputJsonValue,
+    payload: toPrismaJson(payload),
   };
 }
 
@@ -204,12 +208,14 @@ dataRouter.post('/collections/:collectionId/records/:recordId/rollback/:version'
       : await prisma.dataRecordVersion.findUnique({ where: { recordId_version: { recordId: record.id, version } } });
     if (!snapshot) throw new AppError('Version not found', 404);
     const nextVersion = record.version + 1;
-    const payload = snapshot.payload as Record<string, unknown>;
+    const payload = snapshot.payload && typeof snapshot.payload === 'object' && !Array.isArray(snapshot.payload)
+      ? snapshot.payload as Record<string, unknown>
+      : { value: snapshot.payload };
     const updated = await prisma.$transaction(async (tx) => {
-      await tx.dataRecordVersion.create({ data: { recordId: record.id, version: record.version, payload: record.payload, checksum: record.checksum, createdBy: req.user!.userId } });
+      await tx.dataRecordVersion.create({ data: { recordId: record.id, version: record.version, payload: toPrismaJson(record.payload), checksum: record.checksum, createdBy: req.user!.userId } });
       return tx.dataRecord.update({
         where: { id: record.id },
-        data: { payload: snapshot.payload, checksum: snapshot.checksum, version: nextVersion, searchText: textValue(payload).slice(0,100000), title: pickTitle(payload), recordType: typeof payload.type === 'string' ? payload.type.slice(0,100) : undefined },
+        data: { payload: toPrismaJson(snapshot.payload), checksum: snapshot.checksum, version: nextVersion, searchText: textValue(payload).slice(0,100000), title: pickTitle(payload), recordType: typeof payload.type === 'string' ? payload.type.slice(0,100) : undefined },
       });
     });
     await prisma.auditLog.create({ data: { userId: req.user!.userId, action: 'ROLLBACK', entity: 'DataRecord', entityId: record.id, metadata: { fromVersion: record.version, toVersion: version, createdVersion: nextVersion } } });
@@ -259,43 +265,46 @@ dataRouter.post('/collections/:collectionId/import', async (req, res, next) => {
     for (let offset = 0; offset < source.length; offset += 100) {
       const batch = source.slice(offset, offset + 100).map((item, index) => normalizeRecord(item, offset + index));
       try {
-        await prisma.$transaction(
-          batch.map(async (record) => {
-            const existing = await prisma.dataRecord.findUnique({
+        await prisma.$transaction(async (tx) => {
+          for (const record of batch) {
+            const checksum = crypto.createHash('sha256').update(JSON.stringify(record.payload)).digest('hex');
+            const existing = await tx.dataRecord.findUnique({
               where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
+              select: { id: true, version: true, payload: true, checksum: true },
             });
             if (existing) {
-              await prisma.dataRecordVersion.create({
+              await tx.dataRecordVersion.create({
                 data: {
                   recordId: existing.id,
                   version: existing.version,
-                  payload: existing.payload,
+                  payload: toPrismaJson(existing.payload),
                   checksum: existing.checksum,
                   createdBy: req.user!.userId,
                 },
               });
             }
-            return prisma.dataRecord.upsert({
-            where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
-            update: {
-              title: record.title,
-              recordType: record.recordType,
-              searchText: record.searchText,
-              payload: record.payload,
-              version: { increment: 1 },
-              checksum: crypto.createHash('sha256').update(JSON.stringify(record.payload)).digest('hex'),
-              sourceFile: filename,
-              status: 'ACTIVE',
-            },
-            create: {
-              collectionId: collection.id,
-              ...record,
-              checksum: crypto.createHash('sha256').update(JSON.stringify(record.payload)).digest('hex'),
-              sourceFile: filename,
-            },
-          });
-          }),
-        );
+            await tx.dataRecord.upsert({
+              where: { collectionId_externalId: { collectionId: collection.id, externalId: record.externalId } },
+              update: {
+                title: record.title,
+                recordType: record.recordType,
+                searchText: record.searchText,
+                payload: toPrismaJson(record.payload),
+                version: { increment: 1 },
+                checksum,
+                sourceFile: filename,
+                status: 'ACTIVE',
+              },
+              create: {
+                collectionId: collection.id,
+                ...record,
+                payload: toPrismaJson(record.payload),
+                checksum,
+                sourceFile: filename,
+              },
+            });
+          }
+        });
         imported += batch.length;
       } catch (error) {
         rejected += batch.length;
