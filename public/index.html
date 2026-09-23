@@ -177,7 +177,14 @@
               <select id="dbCollection"></select>
               <input id="dbQuery" placeholder="Поиск по id, названию или содержимому">
               <button id="dbRefresh">Обновить</button>
-              <button id="dbImportToggle">Импорт JSON/MCP</button><button id="dbExport">Экспорт JSON</button>
+              <button id="dbImportToggle">Импорт JSON/MCP</button>
+              <button id="dbExport">Экспорт JSON</button>
+              <select id="dbExportFormat" title="Формат экспорта">
+                <option value="array">JSON array</option>
+                <option value="envelope">JSON envelope</option>
+                <option value="ndjson">NDJSON</option>
+              </select>
+              <button id="dbCreateCollection">Новая коллекция</button>
             </div>
 
             <div id="dbImportPanel" class="panel nested" hidden>
@@ -187,9 +194,14 @@
                   <h3>Массив MCP/JSON без потери структуры</h3>
                 </div>
               </div>
-              <input id="dbFilename" placeholder="Имя источника, например medical.json">
-              <textarea id="dbPayload" rows="12" placeholder='Вставьте JSON-массив или объект MCP. Например: {"items":[{"id":"1","name":"..."}]}'></textarea>
+              <div class="db-upload-row">
+                <input id="dbFile" type="file" accept=".json,.jsonl,.ndjson,.txt,application/json">
+                <input id="dbFilename" placeholder="Имя источника, например medical.json">
+              </div>
+              <textarea id="dbPayload" rows="12" placeholder='Вставьте JSON-массив, JSON-envelope, NDJSON или MCP content. Например: {"items":[{"id":"1","name":"..."}]}'></textarea>
+              <div id="dbPreview" class="db-preview" hidden></div>
               <div class="toolbar">
+                <button id="dbPreviewButton">Проверить структуру</button>
                 <button id="dbImport">Импортировать</button>
                 <span id="dbImportMeta" class="meta"></span>
               </div>
